@@ -1,0 +1,21 @@
+# dependencies
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+
+# secrets / local env
+.env
+.env*.local
+
+# local data
+*.db
+
+# Expo / build
+.expo/
+
+# personal Claude Code settings
+.claude/settings.local.json
+
+# old app-only git history
+app/.git.bak/
