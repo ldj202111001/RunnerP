@@ -66,18 +66,24 @@ export function RunMap({ route, position, follow, onUserPan }: Props) {
 
   const run = (js: string) => webRef.current?.injectJavaScript(`${js};true;`);
 
-  // 권한이 이미 있으면 마지막으로 알려진 위치로 옮깁니다. (권한 요청은 '시작' 버튼에서)
+  // 화면을 열면 권한을 받아 내 위치로 옮깁니다. 마지막 위치로 먼저 옮기고, 없으면 현재 위치를 새로 받습니다.
   useEffect(() => {
+    let cancelled = false;
     (async () => {
       try {
-        // 현재 앱의 포그라운드 위치 권한 상태를 확인합니다
-        const { granted } = await Location.getForegroundPermissionsAsync();
-        const last = granted ? await Location.getLastKnownPositionAsync() : null;
-        if (last) setLastKnown({ latitude: last.coords.latitude, longitude: last.coords.longitude });
+        const { granted } = await Location.requestForegroundPermissionsAsync();
+        if (!granted || cancelled) return;
+        const last = await Location.getLastKnownPositionAsync();
+        if (last && !cancelled) setLastKnown({ latitude: last.coords.latitude, longitude: last.coords.longitude });
+        const current = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        if (!cancelled) setLastKnown({ latitude: current.coords.latitude, longitude: current.coords.longitude });
       } catch {
-        // 서울시청 그대로 둡니다.
+        // 권한 거부·GPS 꺼짐이면 서울시청 그대로 둡니다.
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // 측정 전에는 마지막 위치로 이동만 합니다. 실제 위치가 들어오면 그쪽이 우선입니다.
