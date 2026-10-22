@@ -79,6 +79,8 @@ export interface RunCreateRequest {
   avg_pace_sec_per_km: number;
   max_speed_mps: number;
   elevation_gain_m: number;
+  elevation_loss_m: number;
+  elevation_profile: number[]; // 출발점부터 100m마다의 고도 (m)
   steps: number | null;
   route_polyline: string;
   splits: Split[];
@@ -88,6 +90,13 @@ export interface RunCreateRequest {
 export interface Run extends RunCreateRequest {
   id: number;
   cadence_spm: number | null;
+  // 서버가 elevation_profile로 계산한 코스 지형 (고도 데이터가 없으면 null)
+  min_altitude_m: number | null;
+  max_altitude_m: number | null;
+  uphill_distance_m: number | null;
+  downhill_distance_m: number | null;
+  max_grade_pct: number | null;
+  min_grade_pct: number | null;
   rpe: number | null;
   completed: boolean | null;
   load: number | null;

@@ -1,7 +1,8 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, Numeric, SmallInteger, String, func
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, Integer, Numeric, SmallInteger, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -24,6 +25,15 @@ class Run(Base):
     avg_pace_sec_per_km: Mapped[int] = mapped_column(SmallInteger)
     max_speed_mps: Mapped[Decimal] = mapped_column(Numeric(4, 2))
     elevation_gain_m: Mapped[int] = mapped_column(SmallInteger)
+    elevation_loss_m: Mapped[int | None] = mapped_column(SmallInteger)
+    # 출발점부터 100m마다의 고도 (m). 아래 지형 값은 이 프로필로 서버가 계산 (services/terrain.py)
+    elevation_profile: Mapped[list[Any] | None] = mapped_column(JSON)
+    min_altitude_m: Mapped[int | None] = mapped_column(SmallInteger)
+    max_altitude_m: Mapped[int | None] = mapped_column(SmallInteger)
+    uphill_distance_m: Mapped[int | None] = mapped_column(Integer)  # 경사 +3% 이상
+    downhill_distance_m: Mapped[int | None] = mapped_column(Integer)  # 경사 -3% 이하
+    max_grade_pct: Mapped[Decimal | None] = mapped_column(Numeric(4, 1))  # 가장 가파른 오르막
+    min_grade_pct: Mapped[Decimal | None] = mapped_column(Numeric(4, 1))  # 가장 가파른 내리막
     steps: Mapped[int | None] = mapped_column(Integer)
     cadence_spm: Mapped[int | None] = mapped_column(SmallInteger)
     route_polyline: Mapped[str] = mapped_column(LongText)

@@ -17,6 +17,8 @@ const toRad = (deg: number) => (deg * Math.PI) / 180;
 // 고도가 이만큼 오르내려야 변화로 인정 (센서 잡음 무시)
 const ELEVATION_THRESHOLD_M = 3;
 const MAX_PACE_SEC = 32_767; // DB SMALLINT 상한
+// 고도 프로필 간격. 서버의 경사 계산(services/terrain.py)과 같은 값이어야 합니다.
+export const PROFILE_INTERVAL_M = 100;
 
 // 두 지점 사이 거리 (haversine, m)
 export function distanceBetween(
@@ -66,9 +68,10 @@ export function encodePolyline(points: TrackPoint[]): string {
   return out;
 }
 
-// 잡음을 무시한 누적 상승 고도: 기준점보다 임계값 이상 오르면 상승으로 더하고, 내려가면 기준점을 낮춥니다.
-function elevationGain(points: TrackPoint[]): number {
+// 잡음을 무시한 누적 상승·하강 고도: 기준점에서 임계값 이상 오르내려야 변화로 더하고 기준점을 옮깁니다.
+function elevationChange(points: TrackPoint[]): { gain: number; loss: number } {
   let gain = 0;
+  let loss = 0;
   let base: number | null = null;
   for (const p of points) {
     if (p.altitude == null) continue;
@@ -78,10 +81,44 @@ function elevationGain(points: TrackPoint[]): number {
       gain += p.altitude - base;
       base = p.altitude;
     } else if (base - p.altitude >= ELEVATION_THRESHOLD_M) {
+      loss += base - p.altitude;
       base = p.altitude;
     }
   }
-  return gain;
+  return { gain, loss };
+}
+
+// 코스 고도 프로필: 출발점부터 PROFILE_INTERVAL_M마다의 고도 (선형 보간, 0.1m 단위).
+// 원본 시계열 대신 이것만 보내고, 경사는 서버가 이 프로필로 계산합니다.
+export function elevationProfile(points: TrackPoint[]): number[] {
+  const profile: number[] = [];
+  let distance = 0;
+  let nextAt = 0;
+  let prev: { distance: number; altitude: number } | null = null;
+
+  for (let i = 0; i < points.length; i++) {
+    if (i > 0) distance += segmentDistance(points[i - 1], points[i]);
+    const altitude = points[i].altitude;
+    if (altitude == null) continue;
+    const cur = { distance, altitude };
+
+    if (prev == null) {
+      // 고도를 처음 얻은 지점 전까지는 그 고도로 채웁니다.
+      while (nextAt <= cur.distance) {
+        profile.push(Math.round(cur.altitude * 10) / 10);
+        nextAt += PROFILE_INTERVAL_M;
+      }
+    } else {
+      while (nextAt <= cur.distance) {
+        const span = cur.distance - prev.distance;
+        const ratio = span > 0 ? (nextAt - prev.distance) / span : 1;
+        profile.push(Math.round((prev.altitude + (cur.altitude - prev.altitude) * ratio) * 10) / 10);
+        nextAt += PROFILE_INTERVAL_M;
+      }
+    }
+    prev = cur;
+  }
+  return profile;
 }
 
 // 러닝 종료 시 버퍼를 요약값으로 바꿉니다. 원본 시계열은 서버로 보내지 않습니다.
@@ -127,13 +164,16 @@ export function summarizeRun(
     }
   }
 
+  const elevation = elevationChange(points);
   return {
     started_at: new Date(startedAt).toISOString(),
     duration_sec: Math.round(durationSec),
     distance_m: Math.round(distance),
     avg_pace_sec_per_km: paceSecPerKm(distance, durationSec),
     max_speed_mps: Math.round(Math.min(maxSpeed, 99) * 100) / 100,
-    elevation_gain_m: Math.round(elevationGain(points)),
+    elevation_gain_m: Math.round(elevation.gain),
+    elevation_loss_m: Math.round(elevation.loss),
+    elevation_profile: elevationProfile(points),
     steps,
     route_polyline: encodePolyline(points),
     splits,

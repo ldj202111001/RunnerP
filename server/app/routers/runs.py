@@ -9,6 +9,7 @@ from app.models import Goal, PlannedSession, Run, RunSplit, User, WeeklyPlan
 from app.routers._stub import not_implemented
 from app.schemas.run import RunCreate, RunOut, RunPage
 from app.security import get_current_user
+from app.services.terrain import analyze_profile
 
 router = APIRouter(prefix="/runs", tags=["runs"])
 
@@ -26,7 +27,7 @@ def _get_own_run(db: Session, user: User, run_id: int) -> Run:
 
 @router.post("", response_model=RunOut, status_code=status.HTTP_201_CREATED)
 def create_run(body: RunCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """러닝 저장 (요약값 + 폴리라인 + 1km 구간)"""
+    """러닝 저장 (요약값 + 폴리라인 + 1km 구간 + 100m 고도 프로필)"""
     if body.planned_session_id is not None:
         owned = db.scalar(
             select(PlannedSession.id)
@@ -42,6 +43,7 @@ def create_run(body: RunCreate, user: User = Depends(get_current_user), db: Sess
         user_id=user.id,
         cadence_spm=cadence,
         **body.model_dump(exclude={"splits"}),
+        **analyze_profile(body.elevation_profile),
         splits=[RunSplit(**s.model_dump()) for s in body.splits],
     )
     db.add(run)

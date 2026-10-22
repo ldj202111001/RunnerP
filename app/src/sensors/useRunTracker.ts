@@ -152,7 +152,8 @@ export function useRunTracker() {
           segment: current.segment,
           latitude: fix.latitude,
           longitude: fix.longitude,
-          altitude: baroSub.current?.latest() ?? fix.altitude,
+          // 기압 고도와 GPS 고도는 기준이 달라 섞으면 고도가 튑니다. 기압계가 있으면 기압 고도만 씁니다.
+          altitude: baroSub.current ? baroSub.current.latest() : fix.altitude,
           speed: fix.speed != null && fix.speed >= 0 ? fix.speed : null,
         };
         if (lastAccepted.current) distance.current += segmentDistance(lastAccepted.current, point);

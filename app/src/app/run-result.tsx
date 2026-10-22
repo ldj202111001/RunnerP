@@ -32,9 +32,22 @@ export default function RunResultScreen() {
         <Item label="시간" value={formatDuration(run.duration_sec * 1000)} />
         <Item label="평균 페이스" value={formatPace(run.avg_pace_sec_per_km)} />
         <Item label="상승 고도" value={`${run.elevation_gain_m} m`} />
+        <Item label="하강 고도" value={run.elevation_loss_m != null ? `${run.elevation_loss_m} m` : '-'} />
         <Item label="걸음수" value={run.steps != null ? String(run.steps) : '-'} />
         <Item label="케이던스" value={run.cadence_spm != null ? `${run.cadence_spm} spm` : '-'} />
       </View>
+
+      {run.max_grade_pct != null && run.min_grade_pct != null ? (
+        <>
+          <Text style={styles.section}>코스 지형</Text>
+          <View style={styles.grid}>
+            <Item label="고도 범위" value={`${run.min_altitude_m}–${run.max_altitude_m} m`} />
+            <Item label="최대 경사" value={`${formatGrade(run.max_grade_pct)} / ${formatGrade(run.min_grade_pct)}`} />
+            <Item label="오르막 (3%+)" value={`${formatKm(run.uphill_distance_m ?? 0)} km`} />
+            <Item label="내리막 (3%+)" value={`${formatKm(run.downhill_distance_m ?? 0)} km`} />
+          </View>
+        </>
+      ) : null}
 
       {run.splits.length > 0 ? (
         <>
@@ -56,6 +69,10 @@ export default function RunResultScreen() {
       </View>
     </ScrollView>
   );
+}
+
+function formatGrade(pct: number): string {
+  return `${pct > 0 ? '+' : ''}${pct}%`;
 }
 
 function Item({ label, value }: { label: string; value: string }) {

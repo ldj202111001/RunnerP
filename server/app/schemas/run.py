@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from typing import Annotated
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -20,6 +21,9 @@ class RunCreate(BaseModel):
     avg_pace_sec_per_km: int = Field(ge=0, le=32767)
     max_speed_mps: float = Field(ge=0, lt=100)
     elevation_gain_m: int = Field(ge=0, le=32767)
+    elevation_loss_m: int = Field(default=0, ge=0, le=32767)
+    # 출발점부터 100m마다의 고도 (m). 고도를 못 얻었으면 빈 배열
+    elevation_profile: list[Annotated[float, Field(ge=-1000, le=9000)]] = Field(default=[], max_length=5000)
     steps: int | None = Field(default=None, ge=0)
     route_polyline: str
     splits: list[SplitIn] = []
@@ -43,6 +47,14 @@ class RunOut(BaseModel):
     avg_pace_sec_per_km: int
     max_speed_mps: float
     elevation_gain_m: int
+    elevation_loss_m: int | None
+    elevation_profile: list[float] | None
+    min_altitude_m: int | None
+    max_altitude_m: int | None
+    uphill_distance_m: int | None
+    downhill_distance_m: int | None
+    max_grade_pct: float | None
+    min_grade_pct: float | None
     steps: int | None
     cadence_spm: int | None
     route_polyline: str
