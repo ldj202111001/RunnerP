@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, LayoutAnimation, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { runsApi } from '@/api/endpoints';
 import type { RunCreateRequest } from '@/api/types';
@@ -30,6 +31,7 @@ export default function RunTrackingScreen() {
   const [uploading, setUploading] = useState(false);
   const [follow, setFollow] = useState(true);
   const [panelOpen, setPanelOpen] = useState(true);
+  const insets = useSafeAreaInsets();
 
   // 손잡이(─)를 탭하면 토글, 위로 끌면 열고 아래로 끌면 닫습니다.
   const handlePan = useMemo(
@@ -93,6 +95,8 @@ export default function RunTrackingScreen() {
 
   const gps = gpsLabel(view.gpsAccuracy);
   const active = view.status === 'running' || view.status === 'paused';
+  // 측정 정보(거리·시간·페이스·걸음수)는 시작 버튼을 누른 뒤부터 보여 줍니다.
+  const showMetrics = view.status !== 'idle';
 
   return (
     <View style={styles.container}>
@@ -113,17 +117,20 @@ export default function RunTrackingScreen() {
         ) : null}
       </View>
 
-      <View style={styles.panel}>
-        <View
-          style={styles.handleArea}
-          {...handlePan.panHandlers}
-          accessibilityRole="button"
-          accessibilityLabel={panelOpen ? '측정 정보 접기' : '측정 정보 펼치기'}
-        >
-          <View style={styles.handle} />
-        </View>
+      {/* 안드로이드 내비게이션 바(홈·뒤로가기)에 가리지 않도록 아래 여백에 시스템 영역만큼 더합니다. */}
+      <View style={[styles.panel, { paddingBottom: 20 + insets.bottom }, !showMetrics && styles.panelIdle]}>
+        {!showMetrics ? null : (
+          <View
+            style={styles.handleArea}
+            {...handlePan.panHandlers}
+            accessibilityRole="button"
+            accessibilityLabel={panelOpen ? '측정 정보 접기' : '측정 정보 펼치기'}
+          >
+            <View style={styles.handle} />
+          </View>
+        )}
 
-        {panelOpen ? (
+        {!showMetrics ? null : panelOpen ? (
           <>
             <View style={styles.main}>
               <Text style={styles.distance}>{formatKm(view.distanceM)}</Text>
@@ -238,6 +245,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
+  panelIdle: { paddingTop: 20 },
   handleArea: { alignItems: 'center', paddingTop: 10, paddingBottom: 14 },
   handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(0, 0, 0, 0.25)' },
   compact: {
