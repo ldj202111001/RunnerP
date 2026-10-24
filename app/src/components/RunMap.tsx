@@ -59,7 +59,7 @@ interface Props {
 }
 
 export function RunMap({ route, position, follow, onUserPan }: Props) {
-  const webRef = useRef<WebView>(null);
+  const webRef = useRef<WebView<object>>(null);
   const [ready, setReady] = useState(false);
   const [lastKnown, setLastKnown] = useState<LatLng | null>(null);
   const html = useMemo(() => buildHtml(FALLBACK_CENTER, colors.primary), []);

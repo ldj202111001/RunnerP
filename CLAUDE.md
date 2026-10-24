@@ -8,7 +8,7 @@
 ## 구조
 
 ```
-app/      Expo(SDK 57) + Expo Router 앱. 지침은 app/AGENTS.md (Expo API는 기억 말고 버전 문서 확인)
+app/      Expo(SDK 58) + Expo Router 앱. 지침은 app/AGENTS.md (Expo API는 기억 말고 버전 문서 확인)
 server/   FastAPI + SQLAlchemy + Alembic. 개발 DB는 SQLite(server/dev.db), 운영은 MySQL 예정
 start_phone.bat  PC LAN IP 감지 → app/.env.local 갱신 → 서버·Expo를 각각 새 창으로 실행
 ```

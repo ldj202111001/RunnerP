@@ -12,28 +12,28 @@ export default function TabLayout() {
         name="index"
         options={{
           title: '홈',
-          tabBarIcon: ({ color, size }) => <Ionicons name="map" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="map" size={size} color={color as string} />,
         }}
       />
       <Tabs.Screen
         name="today"
         options={{
           title: '추천',
-          tabBarIcon: ({ color, size }) => <Ionicons name="sparkles" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="sparkles" size={size} color={color as string} />,
         }}
       />
       <Tabs.Screen
         name="plan"
         options={{
           title: '계획',
-          tabBarIcon: ({ color, size }) => <Ionicons name="calendar" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="calendar" size={size} color={color as string} />,
         }}
       />
       <Tabs.Screen
         name="history"
         options={{
           title: '기록',
-          tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" size={size} color={color} />,
+          tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart" size={size} color={color as string} />,
         }}
       />
     </Tabs>
