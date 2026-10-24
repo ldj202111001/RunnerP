@@ -45,7 +45,7 @@ cd server; py -3.13 -m venv .venv; .venv\Scripts\pip install -r requirements.txt
 - `services/predictor.py`, `planner.py`, `fatigue.py`는 docstring 뼈대만 있음. `ml_models/`는 비어 있음.
 
 앱 (`app/src/app/`):
-- 구현: 로그인(`login.tsx`), 러닝 측정(`(tabs)/index.tsx` + `src/sensors/`의 GPS 필터·걸음수·고도·요약, `src/storage/runBuffer.ts`), 결과 화면 요약·코스 지형 표시(`run-result.tsx`)
+- 구현: 로그인(`login.tsx`), 러닝 측정(`(drawer)/index.tsx` + `src/sensors/`의 GPS 필터·걸음수·고도·요약, `src/storage/runBuffer.ts`), 결과 화면 요약·코스 지형 표시(`run-result.tsx`)
 - 플레이스홀더: 목표 설정(`goal-setup.tsx`), 오늘(`today.tsx`), 계획(`plan.tsx`), 기록(`history.tsx`), 러닝 상세(`runs/[id].tsx`), 결과 화면의 RPE·완주·메모 입력
 
 다음 순서(설계서 8절): FitRec 전처리 → `features.py` → XGBoost 학습 → predictor·planner 구현 → 추천 API → 남은 화면.
