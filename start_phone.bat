@@ -19,13 +19,13 @@ echo Updated app\.env.local : http://%IP%:8000/api/v1
 rem 3) Server (FastAPI) in a new window, on 0.0.0.0 so the phone can reach it
 start "Runner Server" /D "%~dp0server" cmd /k ".venv\Scripts\python.exe -m alembic upgrade head & .venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
-rem 4) App (Expo) in a new window. Scan the QR code with Expo Go.
+rem 4) App (Expo) in a new window. Scan the QR code with the dev build app (press s to switch to Expo Go).
 start "Runner App" /D "%~dp0app" cmd /k "npx expo start"
 
 echo.
 echo Two windows will open:
 echo   Runner Server : check http://%IP%:8000/api/v1/health
-echo   Runner App    : scan the QR code with Expo Go on your phone
+echo   Runner App    : scan the QR code with the dev build app (Naver map). Press s there for Expo Go (OSM map).
 echo The phone and this PC must be on the same Wi-Fi.
 echo.
 pause

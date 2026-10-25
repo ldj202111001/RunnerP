@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# 네이버 지도 키 등 (app/.env.example 참고)
+/.env

@@ -10,6 +10,7 @@
 ```
 app/      Expo(SDK 58) + Expo Router 앱. 지침은 app/AGENTS.md (Expo API는 기억 말고 버전 문서 확인)
 server/   FastAPI + SQLAlchemy + Alembic. 개발 DB는 SQLite(server/dev.db), 운영은 MySQL 예정
+eas.json         EAS 빌드 프로필 (development = 개발 빌드 APK)
 start_phone.bat  PC LAN IP 감지 → app/.env.local 갱신 → 서버·Expo를 각각 새 창으로 실행
 ```
 
@@ -32,7 +33,11 @@ cd server; py -3.13 -m venv .venv; .venv\Scripts\pip install -r requirements.txt
 ```
 `server/.env`는 git에 없다 (`server/.env.example` 참고, 다른 PC에서 직접 복사).
 
-실행은 루트의 `start_phone.bat` (폰과 PC가 같은 Wi-Fi, Expo Go로 QR 스캔).
+실행은 루트의 `start_phone.bat` (폰과 PC가 같은 Wi-Fi, 폰에 설치한 개발 빌드 앱으로 QR 스캔).
+
+지도는 네이버 지도(`@mj-studio/react-native-naver-map`)라 Expo Go가 아니라 **개발 빌드**가 필요하다. Expo Go로 열면 `RunMap.tsx`가 Leaflet(OSM) 지도로 대신 그린다.
+- 키: 네이버 클라우드 플랫폼 Maps Client ID, 패키지명 `com.runnerp.app`. EAS에는 `NAVER_MAP_CLIENT_ID` 환경변수로, 로컬은 `app/.env`(git에 없음, `app/.env.example` 참고).
+- 개발 빌드 만들기: `cd app; npx eas-cli@latest build --profile development --platform android` → 나온 APK를 폰에 설치. 네이티브 패키지나 키를 바꿨을 때만 다시 빌드한다 (JS 수정은 그대로 반영).
 - 서버만: `cd server; .venv\Scripts\python -m alembic upgrade head; .venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload`
 - 헬스 체크: `http://<PC IP>:8000/api/v1/health`
 - 앱 검사: `cd app; npx expo lint; npx tsc --noEmit`
