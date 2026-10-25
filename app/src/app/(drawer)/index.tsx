@@ -209,8 +209,9 @@ export default function RunTrackingScreen() {
 }
 
 const formatMeters = (m: number | null) => (m == null ? '-' : `${Math.round(m)} m`);
+const formatGrade = (g: number | null) => (g == null ? '-' : `${g > 0 ? '+' : ''}${g.toFixed(1)}%`);
 
-// 측정 지표를 옆으로 넘기는 두 페이지: 1) 거리·시간·페이스 2) 케이던스·걸음수·고도
+// 측정 지표를 옆으로 넘기는 두 페이지: 1) 거리·시간·페이스 2) 케이던스·걸음수·경사·고도
 function MetricPager({ view }: { view: TrackerView }) {
   const [width, setWidth] = useState(0);
   const [page, setPage] = useState(0);
@@ -229,11 +230,11 @@ function MetricPager({ view }: { view: TrackerView }) {
     },
     {
       key: 'body',
-      label: '케이던스 (분당 걸음)',
+      label: `케이던스 (분당 걸음) · ${view.steps.toLocaleString()} 걸음`,
       big: view.cadence > 0 ? String(view.cadence) : '--',
       unit: 'spm',
       metrics: [
-        { label: '걸음수', value: view.steps.toLocaleString() },
+        { label: '현재 경사', value: formatGrade(view.gradePct) },
         { label: '현재 고도', value: formatMeters(view.altitudeM) },
         { label: '누적 상승', value: formatMeters(view.elevationGainM) },
       ],

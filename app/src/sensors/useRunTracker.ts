@@ -28,6 +28,7 @@ export interface TrackerView {
   cadence: number; // 걸음/분, 최근 30초 기준. 0이면 아직 계산 불가
   altitudeM: number | null; // 마지막 지점의 고도 (기압계 우선)
   elevationGainM: number; // 누적 상승 고도 (잡음 무시, 서버 요약과 같은 방식)
+  gradePct: number | null; // 최근 약 100m의 평균 경사 (%), 오르막이 +. 50m 미만이면 null
   gpsAccuracy: number | null; // 마지막으로 받은 GPS 오차 (m)
   position: LatLng | null; // 마지막으로 받은 GPS 위치 (지도 카메라용)
   route: LatLng[][]; // 지도에 그릴 경로, 일시정지 구간마다 끊어서
@@ -69,6 +70,33 @@ function updateCadence(samples: StepSample[], elapsedMs: number, steps: number):
   return dt >= 10_000 ? Math.round(((steps - samples[0].steps) * 60_000) / dt) : 0;
 }
 
+const GRADE_WINDOW_M = 100;
+const GRADE_MIN_M = 50;
+const GRADE_SMOOTH_POINTS = 3;
+
+const meanAltitude = (points: TrackPoint[]): number | null => {
+  const alts = points.map((p) => p.altitude).filter((a): a is number => a != null);
+  return alts.length ? alts.reduce((s, a) => s + a, 0) / alts.length : null;
+};
+
+// 현재 구간에서 최근 약 100m를 거슬러 올라가 그 사이의 평균 경사를 셉니다.
+// 센서 잡음을 줄이려고 양 끝 고도는 각각 지점 3개의 평균을 씁니다. 50m도 못 달렸으면 null.
+function currentGrade(points: TrackPoint[]): number | null {
+  let i = points.length - 1;
+  const last = points[i];
+  if (!last) return null;
+  let d = 0;
+  while (i > 0 && points[i - 1].segment === last.segment && d < GRADE_WINDOW_M) {
+    d += distanceBetween(points[i - 1], points[i]);
+    i--;
+  }
+  if (d < GRADE_MIN_M) return null;
+  const end = meanAltitude(points.slice(-GRADE_SMOOTH_POINTS));
+  const begin = meanAltitude(points.slice(i, i + GRADE_SMOOTH_POINTS));
+  if (end == null || begin == null) return null;
+  return Math.round(((end - begin) / d) * 1000) / 10;
+}
+
 const initialView: TrackerView = {
   status: 'idle',
   elapsedMs: 0,
@@ -79,6 +107,7 @@ const initialView: TrackerView = {
   cadence: 0,
   altitudeM: null,
   elevationGainM: 0,
+  gradePct: null,
   gpsAccuracy: null,
   position: null,
   route: [],
@@ -139,6 +168,7 @@ export function useRunTracker() {
       cadence: status.current === 'running' ? updateCadence(stepSamples.current, elapsed, totalSteps()) : 0,
       altitudeM: lastAltitude,
       elevationGainM: elevationChange(points).gain,
+      gradePct: currentGrade(points),
       gpsAccuracy: gpsAccuracy.current,
       position: position.current,
       route: toRoute(points),
