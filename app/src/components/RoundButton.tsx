@@ -52,5 +52,5 @@ const styles = StyleSheet.create({
   button: { alignItems: 'center', justifyContent: 'center', ...shadow.float },
   pressed: { transform: [{ scale: 0.94 }] },
   disabled: { opacity: 0.5 },
-  label: { ...type.caption, color: colors.onInkMuted },
+  label: { ...type.caption, color: colors.muted },
 });

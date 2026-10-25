@@ -8,7 +8,7 @@ interface Props {
   style?: StyleProp<ViewStyle>;
 }
 
-// 흰 배경 + 둥근 모서리 + 옅은 그림자의 기본 카드
+// 흰 배경 + 둥근 모서리 + 옅은 테두리·그림자의 기본 카드 (흰 바탕 위에서도 구분되도록 테두리)
 export function Card({ children, style }: Props) {
   return <View style={[styles.card, style]}>{children}</View>;
 }
@@ -24,7 +24,14 @@ export function SectionTitle({ title, right }: { title: string; right?: ReactNod
 }
 
 const styles = StyleSheet.create({
-  card: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, ...shadow.card },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    ...shadow.card,
+  },
   section: {
     flexDirection: 'row',
     alignItems: 'center',

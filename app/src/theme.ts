@@ -2,22 +2,20 @@ import { Platform, type TextStyle, type ViewStyle } from 'react-native';
 
 // 디자인 토큰: 화면에서는 색·간격·글자 크기를 직접 쓰지 말고 여기 값을 씁니다.
 export const colors = {
-  // 브랜드: 에너지 있는 코랄 오렌지 + 짙은 잉크(측정 화면 HUD)
+  // 브랜드: 에너지 있는 코랄 오렌지 + 짙은 잉크(강조 버튼·글자)
   primary: '#FF5A36',
   primaryPressed: '#E64A28',
   primarySoft: '#FFEDE8',
   ink: '#12141A',
-  inkSoft: '#1E2129',
-  inkBorder: 'rgba(255, 255, 255, 0.08)',
 
   text: '#12141A',
   textSecondary: '#4B5161',
   muted: '#8A90A0',
-  onInk: '#FFFFFF',
-  onInkMuted: 'rgba(255, 255, 255, 0.55)',
 
-  background: '#F4F5F7',
+  // 기본 바탕은 흰색. 입력칸·세그먼트처럼 바탕과 구분이 필요한 곳은 surfaceAlt.
+  background: '#FFFFFF',
   surface: '#FFFFFF',
+  surfaceAlt: '#F4F5F7',
   border: '#E6E8EC',
 
   success: '#16A34A',

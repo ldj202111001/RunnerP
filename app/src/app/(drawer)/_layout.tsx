@@ -117,7 +117,12 @@ function DrawerMenu(props: DrawerContentComponentProps) {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  header: { backgroundColor: colors.ink, paddingHorizontal: spacing.xl, paddingBottom: spacing.xl },
+  header: {
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+  },
   avatar: {
     width: 52,
     height: 52,
@@ -128,8 +133,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   avatarText: { ...type.h2, color: '#fff' },
-  name: { ...type.h3, color: colors.onInk },
-  email: { ...type.caption, color: colors.onInkMuted, marginTop: 2 },
+  name: { ...type.h3, color: colors.text },
+  email: { ...type.caption, color: colors.muted, marginTop: 2 },
   items: { paddingTop: spacing.md, paddingHorizontal: spacing.sm },
   signOut: {
     flexDirection: 'row',
@@ -140,6 +145,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.md,
   },
-  pressed: { backgroundColor: colors.background },
+  pressed: { backgroundColor: colors.surfaceAlt },
   signOutText: { ...type.bodyStrong, color: colors.muted },
 });

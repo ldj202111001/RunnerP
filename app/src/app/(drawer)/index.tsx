@@ -167,7 +167,7 @@ export default function RunTrackingScreen() {
               <Metric label="현재 페이스" value={formatPace(view.currentPace)} />
             </View>
             <Text style={styles.steps}>
-              <Ionicons name="footsteps" size={13} color={colors.onInkMuted} /> {view.steps.toLocaleString()} 걸음
+              <Ionicons name="footsteps" size={13} color={colors.muted} /> {view.steps.toLocaleString()} 걸음
             </Text>
           </>
         ) : (
@@ -193,10 +193,10 @@ export default function RunTrackingScreen() {
           ) : view.status === 'starting' ? (
             <RoundButton icon="play" label="GPS 준비 중" size={88} loading onPress={() => {}} />
           ) : view.status === 'running' ? (
-            <RoundButton icon="pause" label="일시정지" bg={colors.onInk} fg={colors.ink} onPress={() => void pause()} />
+            <RoundButton icon="pause" label="일시정지" bg={colors.ink} onPress={() => void pause()} />
           ) : (
             <>
-              <RoundButton icon="stop" label="종료" size={64} bg={colors.inkSoft} fg={colors.danger} onPress={onFinish} />
+              <RoundButton icon="stop" label="종료" size={64} bg={colors.dangerSoft} fg={colors.danger} onPress={onFinish} />
               <RoundButton icon="play" label="재개" onPress={() => void resume()} />
             </>
           )}
@@ -204,7 +204,7 @@ export default function RunTrackingScreen() {
 
         {view.status === 'idle' && pending ? (
           <Button
-            variant="onInk"
+            variant="secondary"
             icon="cloud-upload-outline"
             style={styles.retry}
             label={`저장 안 된 기록 다시 보내기 (${formatKm(pending.distance_m)} km)`}
@@ -258,27 +258,26 @@ const styles = StyleSheet.create({
   },
   dot: { width: 8, height: 8, borderRadius: 4 },
   chipText: { ...type.caption, fontWeight: '700', color: colors.text },
-  // 지도 위에 겹치는 어두운 하단 패널 (반투명 배경에 elevation을 주면 안드로이드에서 그림자가 비쳐 보여 테두리로 대신합니다)
+  // 지도 위에 겹치는 흰 하단 패널 (불투명이라 안드로이드 elevation 그림자가 비쳐 보이지 않습니다)
   panel: {
     marginTop: 'auto',
-    backgroundColor: 'rgba(18, 20, 26, 0.94)',
+    backgroundColor: colors.surface,
     borderTopLeftRadius: radius.xl + 4,
     borderTopRightRadius: radius.xl + 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.inkBorder,
     paddingHorizontal: spacing.xl,
+    ...shadow.float,
   },
   panelIdle: { paddingTop: spacing.xxl },
   idleHeader: { alignItems: 'center', marginBottom: spacing.xl },
-  idleTitle: { ...type.h2, color: colors.onInk },
-  idleSub: { ...type.body, color: colors.onInkMuted, marginTop: spacing.xs },
+  idleTitle: { ...type.h2, color: colors.text },
+  idleSub: { ...type.body, color: colors.textSecondary, marginTop: spacing.xs },
   handleArea: { alignItems: 'center', paddingTop: spacing.md, paddingBottom: spacing.lg },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(255, 255, 255, 0.25)' },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: colors.border },
   compact: {
     ...type.h3,
     textAlign: 'center',
     fontSize: 20,
-    color: colors.onInk,
+    color: colors.text,
     fontVariant: ['tabular-nums'],
     marginBottom: spacing.lg,
   },
@@ -287,21 +286,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'center',
     gap: 4,
-    backgroundColor: 'rgba(217, 119, 6, 0.15)',
+    backgroundColor: colors.warningSoft,
     borderRadius: radius.pill,
     paddingHorizontal: 10,
     paddingVertical: 4,
   },
   pausedText: { ...type.overline, color: colors.warning },
   main: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6 },
-  distance: { ...type.display, fontSize: 72, color: colors.onInk },
-  unit: { ...type.h3, color: colors.onInkMuted },
+  distance: { ...type.display, fontSize: 72, color: colors.text },
+  unit: { ...type.h3, color: colors.muted },
   row: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.md },
-  divider: { width: StyleSheet.hairlineWidth, height: 32, backgroundColor: 'rgba(255, 255, 255, 0.15)' },
+  divider: { width: StyleSheet.hairlineWidth, height: 32, backgroundColor: colors.border },
   metric: { flex: 1, alignItems: 'center' },
-  metricValue: { ...type.stat, color: colors.onInk },
-  metricLabel: { ...type.caption, color: colors.onInkMuted, marginTop: 2 },
-  steps: { ...type.caption, color: colors.onInkMuted, textAlign: 'center', marginTop: spacing.lg },
+  metricValue: { ...type.stat, color: colors.text },
+  metricLabel: { ...type.caption, color: colors.muted, marginTop: 2 },
+  steps: { ...type.caption, color: colors.muted, textAlign: 'center', marginTop: spacing.lg },
   error: { ...type.caption, color: colors.danger, textAlign: 'center', marginTop: spacing.md },
   controls: {
     flexDirection: 'row',

@@ -4,7 +4,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, t
 
 import { colors, radius, type } from '@/theme';
 
-type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'onInk';
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 interface Props {
   label: string;
@@ -18,11 +18,9 @@ interface Props {
 
 const palette: Record<Variant, { bg: string; pressed: string; fg: string; border?: string }> = {
   primary: { bg: colors.primary, pressed: colors.primaryPressed, fg: '#fff' },
-  secondary: { bg: colors.surface, pressed: colors.background, fg: colors.text, border: colors.border },
+  secondary: { bg: colors.surface, pressed: colors.surfaceAlt, fg: colors.text, border: colors.border },
   ghost: { bg: 'transparent', pressed: colors.primarySoft, fg: colors.primary },
   danger: { bg: colors.dangerSoft, pressed: '#FAD9DA', fg: colors.danger },
-  // 어두운 배경(측정 패널) 위의 보조 버튼
-  onInk: { bg: 'rgba(255,255,255,0.1)', pressed: 'rgba(255,255,255,0.18)', fg: colors.onInk },
 };
 
 export function Button({ label, onPress, variant = 'primary', icon, loading, disabled, style }: Props) {

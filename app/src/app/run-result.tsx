@@ -48,7 +48,7 @@ export default function RunResultScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.hero}>
+        <Card style={styles.hero}>
           <View style={styles.heroTop}>
             <View style={styles.doneBadge}>
               <Ionicons name="checkmark" size={14} color="#fff" />
@@ -64,7 +64,7 @@ export default function RunResultScreen() {
             <HeroMetric label="시간" value={formatDuration(run.duration_sec * 1000)} />
             <HeroMetric label="평균 페이스" value={formatPace(run.avg_pace_sec_per_km)} />
           </View>
-        </View>
+        </Card>
 
         <SectionTitle title="상세 지표" />
         <Card style={styles.grid}>
@@ -214,7 +214,7 @@ const styles = StyleSheet.create({
   errorText: { ...type.body, color: colors.textSecondary },
   container: { padding: spacing.xl, paddingBottom: spacing.xxxl },
 
-  hero: { backgroundColor: colors.ink, borderRadius: radius.xl, padding: spacing.xl },
+  hero: { borderRadius: radius.xl, padding: spacing.xl },
   heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   doneBadge: {
     flexDirection: 'row',
@@ -226,20 +226,20 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   doneText: { ...type.caption, fontWeight: '700', color: '#fff' },
-  date: { ...type.caption, color: colors.onInkMuted },
+  date: { ...type.caption, color: colors.muted },
   heroMain: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginTop: spacing.lg },
-  heroDistance: { ...type.display, color: colors.onInk },
-  heroUnit: { ...type.h3, color: colors.onInkMuted },
+  heroDistance: { ...type.display, color: colors.text },
+  heroUnit: { ...type.h3, color: colors.muted },
   heroRow: {
     flexDirection: 'row',
     marginTop: spacing.lg,
     paddingTop: spacing.lg,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: 'rgba(255,255,255,0.15)',
+    borderTopColor: colors.border,
   },
   heroMetric: { flex: 1 },
-  heroMetricValue: { ...type.stat, color: colors.onInk },
-  heroMetricLabel: { ...type.caption, color: colors.onInkMuted, marginTop: 2 },
+  heroMetricValue: { ...type.stat, color: colors.text },
+  heroMetricLabel: { ...type.caption, color: colors.muted, marginTop: 2 },
 
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingVertical: spacing.sm },
 

@@ -7,7 +7,7 @@ import { authApi } from '@/api/endpoints';
 import { useSession } from '@/auth/session';
 import { Button } from '@/components/Button';
 import { TextField } from '@/components/TextField';
-import { colors, radius, spacing, type } from '@/theme';
+import { colors, radius, shadow, spacing, type } from '@/theme';
 
 type Mode = 'login' | 'signup';
 
@@ -121,7 +121,7 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: colors.ink },
+  screen: { flex: 1, backgroundColor: colors.background },
   scroll: { flexGrow: 1 },
   hero: { paddingHorizontal: spacing.xxl, paddingBottom: spacing.xxxl },
   logo: {
@@ -133,24 +133,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.xl,
   },
-  brand: { ...type.h1, fontSize: 32, color: colors.onInk },
-  tagline: { ...type.body, fontSize: 17, lineHeight: 25, color: colors.onInkMuted, marginTop: spacing.sm },
-  sheet: {
-    flex: 1,
-    backgroundColor: colors.background,
-    borderTopLeftRadius: radius.xl + 4,
-    borderTopRightRadius: radius.xl + 4,
-    padding: spacing.xxl,
-  },
+  brand: { ...type.h1, fontSize: 32, color: colors.text },
+  tagline: { ...type.body, fontSize: 17, lineHeight: 25, color: colors.textSecondary, marginTop: spacing.sm },
+  sheet: { flex: 1, paddingHorizontal: spacing.xxl },
   segment: {
     flexDirection: 'row',
-    backgroundColor: colors.border,
+    backgroundColor: colors.surfaceAlt,
     borderRadius: radius.md,
     padding: 4,
     marginBottom: spacing.xxl,
   },
   segmentItem: { flex: 1, paddingVertical: 10, borderRadius: radius.sm, alignItems: 'center' },
-  segmentActive: { backgroundColor: colors.surface },
+  segmentActive: { backgroundColor: colors.surface, ...shadow.card },
   segmentText: { ...type.bodyStrong, color: colors.muted },
   segmentTextActive: { color: colors.text },
   form: { gap: spacing.md },
