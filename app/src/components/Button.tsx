@@ -1,36 +1,64 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import type { ComponentProps } from 'react';
+import { ActivityIndicator, Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors } from '@/theme';
+import { colors, radius, type } from '@/theme';
+
+type Variant = 'primary' | 'secondary' | 'ghost' | 'danger' | 'onInk';
 
 interface Props {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary';
+  variant?: Variant;
+  icon?: ComponentProps<typeof Ionicons>['name'];
+  loading?: boolean;
   disabled?: boolean;
+  style?: StyleProp<ViewStyle>;
 }
 
-export function Button({ label, onPress, variant = 'primary', disabled }: Props) {
-  const primary = variant === 'primary';
+const palette: Record<Variant, { bg: string; pressed: string; fg: string; border?: string }> = {
+  primary: { bg: colors.primary, pressed: colors.primaryPressed, fg: '#fff' },
+  secondary: { bg: colors.surface, pressed: colors.background, fg: colors.text, border: colors.border },
+  ghost: { bg: 'transparent', pressed: colors.primarySoft, fg: colors.primary },
+  danger: { bg: colors.dangerSoft, pressed: '#FAD9DA', fg: colors.danger },
+  // 어두운 배경(측정 패널) 위의 보조 버튼
+  onInk: { bg: 'rgba(255,255,255,0.1)', pressed: 'rgba(255,255,255,0.18)', fg: colors.onInk },
+};
+
+export function Button({ label, onPress, variant = 'primary', icon, loading, disabled, style }: Props) {
+  const p = palette[variant];
+  const inactive = disabled || loading;
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled}
+      disabled={inactive}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!inactive, busy: !!loading }}
       style={({ pressed }) => [
         styles.base,
-        primary ? styles.primary : styles.secondary,
-        (pressed || disabled) && styles.dimmed,
+        { backgroundColor: pressed ? p.pressed : p.bg },
+        p.border ? { borderWidth: 1, borderColor: p.border } : null,
+        inactive && styles.dimmed,
+        style,
       ]}
     >
-      <Text style={[styles.label, !primary && styles.secondaryLabel]}>{label}</Text>
+      <View style={styles.content}>
+        {loading ? (
+          <ActivityIndicator color={p.fg} size="small" />
+        ) : icon ? (
+          <Ionicons name={icon} size={18} color={p.fg} />
+        ) : null}
+        <Text style={[styles.label, { color: p.fg }]} numberOfLines={1}>
+          {label}
+        </Text>
+      </View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  base: { paddingVertical: 14, borderRadius: 10, alignItems: 'center' },
-  primary: { backgroundColor: colors.primary },
-  secondary: { borderWidth: 1, borderColor: colors.primary },
-  dimmed: { opacity: 0.6 },
-  label: { color: '#fff', fontWeight: '600', fontSize: 16 },
-  secondaryLabel: { color: colors.primary },
+  base: { minHeight: 52, paddingHorizontal: 20, borderRadius: radius.md, justifyContent: 'center' },
+  content: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  dimmed: { opacity: 0.55 },
+  label: { ...type.bodyStrong, fontSize: 16 },
 });

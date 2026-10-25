@@ -6,6 +6,7 @@ export default function WeeklyPlanScreen() {
     <ScreenPlaceholder
       id="S4"
       title="주간 계획"
+      icon="calendar-outline"
       items={[
         '요일별 훈련 7칸',
         '저강도/고강도 비율 (80/20)',

@@ -10,6 +10,7 @@ export default function GoalSetupScreen() {
     <ScreenPlaceholder
       id="S1"
       title="목표 설정"
+      icon="flag-outline"
       items={[
         '성별·나이·키·몸무게',
         '목표 종목 (5K / 10K / 하프 / 풀)',

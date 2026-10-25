@@ -1,5 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { router, useNavigation } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, LayoutAnimation, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,10 +7,11 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { runsApi } from '@/api/endpoints';
 import type { RunCreateRequest } from '@/api/types';
 import { Button } from '@/components/Button';
+import { RoundButton } from '@/components/RoundButton';
 import { RunMap } from '@/components/RunMap';
 import { useRunTracker } from '@/sensors/useRunTracker';
 import { runBuffer } from '@/storage/runBuffer';
-import { colors } from '@/theme';
+import { colors, radius, shadow, spacing, type } from '@/theme';
 import { formatDuration, formatKm, formatPace } from '@/utils/format';
 
 const MIN_DISTANCE_M = 100;
@@ -19,9 +20,9 @@ const SWIPE_THRESHOLD = 20;
 
 function gpsLabel(accuracy: number | null): { text: string; color: string } {
   if (accuracy == null) return { text: 'GPS 찾는 중', color: colors.muted };
-  if (accuracy <= 10) return { text: `GPS 좋음 (±${Math.round(accuracy)}m)`, color: '#16A34A' };
-  if (accuracy <= 25) return { text: `GPS 보통 (±${Math.round(accuracy)}m)`, color: '#CA8A04' };
-  return { text: `GPS 약함 (±${Math.round(accuracy)}m)`, color: colors.danger };
+  if (accuracy <= 10) return { text: `GPS 좋음 ±${Math.round(accuracy)}m`, color: colors.success };
+  if (accuracy <= 25) return { text: `GPS 보통 ±${Math.round(accuracy)}m`, color: colors.warning };
+  return { text: `GPS 약함 ±${Math.round(accuracy)}m`, color: colors.danger };
 }
 
 // S3 러닝 측정 · 앱 시작 시 첫 화면(홈) (측정 중에는 API 호출 없음, 종료 시 POST /runs)
@@ -32,6 +33,7 @@ export default function RunTrackingScreen() {
   const [follow, setFollow] = useState(true);
   const [panelOpen, setPanelOpen] = useState(true);
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
 
   // 손잡이(─)를 탭하면 토글, 위로 끌면 열고 아래로 끌면 닫습니다.
   const handlePan = useMemo(
@@ -94,7 +96,6 @@ export default function RunTrackingScreen() {
   };
 
   const gps = gpsLabel(view.gpsAccuracy);
-  const active = view.status === 'running' || view.status === 'paused';
   // 측정 정보(거리·시간·페이스·걸음수)는 시작 버튼을 누른 뒤부터 보여 줍니다.
   const showMetrics = view.status !== 'idle';
 
@@ -102,24 +103,39 @@ export default function RunTrackingScreen() {
     <View style={styles.container}>
       <RunMap route={view.route} position={view.position} follow={follow} onUserPan={() => setFollow(false)} />
 
-      <View style={styles.topBar} pointerEvents="box-none">
-        {active ? (
-          <View style={styles.chip}>
-            <Text style={[styles.gps, { color: gps.color }]}>{gps.text}</Text>
-          </View>
-        ) : (
-          <View />
-        )}
+      <View style={[styles.topBar, { top: insets.top + spacing.sm }]} pointerEvents="box-none">
+        <View style={styles.topLeft} pointerEvents="box-none">
+          {view.status === 'idle' ? (
+            <Pressable
+              style={styles.fab}
+              onPress={() => navigation.dispatch({ type: 'OPEN_DRAWER' })}
+              accessibilityLabel="메뉴 열기"
+            >
+              <Ionicons name="menu" size={22} color={colors.text} />
+            </Pressable>
+          ) : null}
+          {showMetrics ? (
+            <View style={styles.chip}>
+              <View style={[styles.dot, { backgroundColor: gps.color }]} />
+              <Text style={styles.chipText}>{gps.text}</Text>
+            </View>
+          ) : null}
+        </View>
         {!follow ? (
-          <Pressable style={styles.locate} onPress={() => setFollow(true)} accessibilityLabel="내 위치로 이동">
+          <Pressable style={styles.fab} onPress={() => setFollow(true)} accessibilityLabel="내 위치로 이동">
             <Ionicons name="locate" size={22} color={colors.primary} />
           </Pressable>
         ) : null}
       </View>
 
       {/* 안드로이드 내비게이션 바(홈·뒤로가기)에 가리지 않도록 아래 여백에 시스템 영역만큼 더합니다. */}
-      <View style={[styles.panel, { paddingBottom: 20 + insets.bottom }, !showMetrics && styles.panelIdle]}>
-        {!showMetrics ? null : (
+      <View style={[styles.panel, { paddingBottom: spacing.xl + insets.bottom }, !showMetrics && styles.panelIdle]}>
+        {!showMetrics ? (
+          <View style={styles.idleHeader}>
+            <Text style={styles.idleTitle}>달릴 준비 되셨나요?</Text>
+            <Text style={styles.idleSub}>시작을 누르면 거리·페이스를 기록합니다.</Text>
+          </View>
+        ) : (
           <View
             style={styles.handleArea}
             {...handlePan.panHandlers}
@@ -132,6 +148,12 @@ export default function RunTrackingScreen() {
 
         {!showMetrics ? null : panelOpen ? (
           <>
+            {view.status === 'paused' ? (
+              <View style={styles.pausedBadge}>
+                <Ionicons name="pause" size={12} color={colors.warning} />
+                <Text style={styles.pausedText}>일시정지됨</Text>
+              </View>
+            ) : null}
             <View style={styles.main}>
               <Text style={styles.distance}>{formatKm(view.distanceM)}</Text>
               <Text style={styles.unit}>km</Text>
@@ -139,51 +161,57 @@ export default function RunTrackingScreen() {
 
             <View style={styles.row}>
               <Metric label="시간" value={formatDuration(view.elapsedMs)} />
+              <View style={styles.divider} />
               <Metric label="평균 페이스" value={formatPace(view.avgPace)} />
-            </View>
-            <View style={styles.row}>
+              <View style={styles.divider} />
               <Metric label="현재 페이스" value={formatPace(view.currentPace)} />
-              <Metric label="걸음수" value={String(view.steps)} />
             </View>
+            <Text style={styles.steps}>
+              <Ionicons name="footsteps" size={13} color={colors.onInkMuted} /> {view.steps.toLocaleString()} 걸음
+            </Text>
           </>
         ) : (
           <Text style={styles.compact}>
             {formatKm(view.distanceM)} km · {formatDuration(view.elapsedMs)}
+            {view.status === 'paused' ? ' · 일시정지' : ''}
           </Text>
         )}
 
         {view.error ? <Text style={styles.error}>{view.error}</Text> : null}
-        {view.status === 'paused' ? <Text style={styles.paused}>일시정지</Text> : null}
 
-        <View style={styles.actions}>
-        {view.status === 'idle' ? (
-          <Button
-            label="시작"
-            onPress={() => {
-              setFollow(true);
-              void start();
-            }}
-          />
-        ) : view.status === 'starting' ? (
-          <Button label="준비 중…" onPress={() => {}} disabled />
-        ) : view.status === 'running' ? (
-          <Button label="일시정지" onPress={() => void pause()} />
-        ) : (
-          <>
-            <Button label="재개" onPress={() => void resume()} />
-            <Button variant="secondary" label="종료" onPress={onFinish} />
-          </>
-        )}
+        <View style={styles.controls}>
+          {view.status === 'idle' ? (
+            <RoundButton
+              icon="play"
+              label="시작"
+              size={88}
+              onPress={() => {
+                setFollow(true);
+                void start();
+              }}
+            />
+          ) : view.status === 'starting' ? (
+            <RoundButton icon="play" label="GPS 준비 중" size={88} loading onPress={() => {}} />
+          ) : view.status === 'running' ? (
+            <RoundButton icon="pause" label="일시정지" bg={colors.onInk} fg={colors.ink} onPress={() => void pause()} />
+          ) : (
+            <>
+              <RoundButton icon="stop" label="종료" size={64} bg={colors.inkSoft} fg={colors.danger} onPress={onFinish} />
+              <RoundButton icon="play" label="재개" onPress={() => void resume()} />
+            </>
+          )}
+        </View>
 
         {view.status === 'idle' && pending ? (
           <Button
-            variant="secondary"
-            label={uploading ? '보내는 중…' : `저장 안 된 기록 다시 보내기 (${formatKm(pending.distance_m)} km)`}
+            variant="onInk"
+            icon="cloud-upload-outline"
+            style={styles.retry}
+            label={`저장 안 된 기록 다시 보내기 (${formatKm(pending.distance_m)} km)`}
             onPress={() => void upload(pending)}
-            disabled={uploading}
+            loading={uploading}
           />
         ) : null}
-        </View>
       </View>
     </View>
   );
@@ -202,68 +230,85 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.border },
   topBar: {
     position: 'absolute',
-    top: 12,
-    left: 12,
-    right: 12,
+    left: spacing.md,
+    right: spacing.md,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
-  chip: {
-    backgroundColor: colors.background,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
-  },
-  gps: { fontWeight: '600' },
-  locate: {
-    backgroundColor: colors.background,
-    borderRadius: 22,
-    width: 44,
-    height: 44,
+  topLeft: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  fab: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
+    width: 46,
+    height: 46,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 1 },
+    ...shadow.float,
   },
-  // 지도 위에 겹치는 반투명 하단 패널 (반투명 배경에 elevation을 주면 안드로이드에서 그림자가 비쳐 보여 테두리로 대신합니다)
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.surface,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.md,
+    height: 34,
+    ...shadow.float,
+  },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  chipText: { ...type.caption, fontWeight: '700', color: colors.text },
+  // 지도 위에 겹치는 어두운 하단 패널 (반투명 배경에 elevation을 주면 안드로이드에서 그림자가 비쳐 보여 테두리로 대신합니다)
   panel: {
     marginTop: 'auto',
-    backgroundColor: 'rgba(255, 255, 255, 0.78)',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+    backgroundColor: 'rgba(18, 20, 26, 0.94)',
+    borderTopLeftRadius: radius.xl + 4,
+    borderTopRightRadius: radius.xl + 4,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(0, 0, 0, 0.12)',
-    paddingHorizontal: 20,
-    paddingBottom: 20,
+    borderColor: colors.inkBorder,
+    paddingHorizontal: spacing.xl,
   },
-  panelIdle: { paddingTop: 20 },
-  handleArea: { alignItems: 'center', paddingTop: 10, paddingBottom: 14 },
-  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(0, 0, 0, 0.25)' },
+  panelIdle: { paddingTop: spacing.xxl },
+  idleHeader: { alignItems: 'center', marginBottom: spacing.xl },
+  idleTitle: { ...type.h2, color: colors.onInk },
+  idleSub: { ...type.body, color: colors.onInkMuted, marginTop: spacing.xs },
+  handleArea: { alignItems: 'center', paddingTop: spacing.md, paddingBottom: spacing.lg },
+  handle: { width: 40, height: 5, borderRadius: 3, backgroundColor: 'rgba(255, 255, 255, 0.25)' },
   compact: {
+    ...type.h3,
     textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.text,
+    fontSize: 20,
+    color: colors.onInk,
     fontVariant: ['tabular-nums'],
-    marginBottom: 12,
+    marginBottom: spacing.lg,
   },
-  main: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6, marginBottom: 16 },
-  distance: { fontSize: 56, fontWeight: '800', color: colors.text, fontVariant: ['tabular-nums'] },
-  unit: { fontSize: 18, color: colors.muted },
-  row: { flexDirection: 'row', marginBottom: 14 },
+  pausedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(217, 119, 6, 0.15)',
+    borderRadius: radius.pill,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  pausedText: { ...type.overline, color: colors.warning },
+  main: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6 },
+  distance: { ...type.display, fontSize: 72, color: colors.onInk },
+  unit: { ...type.h3, color: colors.onInkMuted },
+  row: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.md },
+  divider: { width: StyleSheet.hairlineWidth, height: 32, backgroundColor: 'rgba(255, 255, 255, 0.15)' },
   metric: { flex: 1, alignItems: 'center' },
-  metricValue: { fontSize: 24, fontWeight: '700', color: colors.text, fontVariant: ['tabular-nums'] },
-  metricLabel: { color: colors.muted, marginTop: 2 },
-  error: { color: colors.danger, textAlign: 'center', marginBottom: 12 },
-  paused: { color: colors.muted, textAlign: 'center', fontWeight: '600', marginBottom: 12 },
-  actions: { marginTop: 4, gap: 10 },
+  metricValue: { ...type.stat, color: colors.onInk },
+  metricLabel: { ...type.caption, color: colors.onInkMuted, marginTop: 2 },
+  steps: { ...type.caption, color: colors.onInkMuted, textAlign: 'center', marginTop: spacing.lg },
+  error: { ...type.caption, color: colors.danger, textAlign: 'center', marginTop: spacing.md },
+  controls: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    gap: spacing.xxxl,
+    marginTop: spacing.xl,
+  },
+  retry: { marginTop: spacing.xl },
 });

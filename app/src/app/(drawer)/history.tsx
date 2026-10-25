@@ -9,10 +9,11 @@ export default function HistoryScreen() {
     <ScreenPlaceholder
       id="S6"
       title="기록·진행 상황"
+      icon="stats-chart-outline"
       items={['러닝 이력 목록', '주간 거리·부하 그래프', '예상 기록 추이', '러닝 상세']}
       apis={['GET /runs', 'GET /runs/{id}', 'GET /stats/weekly']}
     >
-      <Button label="[임시] 러닝 상세 열기" onPress={() => router.push('/runs/1')} />
+      <Button variant="secondary" label="[임시] 러닝 상세 열기" onPress={() => router.push('/runs/1')} />
     </ScreenPlaceholder>
   );
 }

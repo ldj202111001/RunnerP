@@ -9,6 +9,7 @@ export default function TodayScreen() {
     <ScreenPlaceholder
       id="S2"
       title="오늘의 추천"
+      icon="sparkles-outline"
       items={[
         '오늘의 훈련 카드 (종류·거리·목표 페이스·강도)',
         '추천 이유 한 줄',
@@ -17,7 +18,7 @@ export default function TodayScreen() {
       ]}
       apis={['GET /plans/today', 'GET /goals/current/progress']}
     >
-      <Button label="시작" onPress={() => router.navigate('/')} />
+      <Button icon="play" label="러닝 시작하기" onPress={() => router.navigate('/')} />
     </ScreenPlaceholder>
   );
 }

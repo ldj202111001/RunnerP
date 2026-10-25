@@ -19,3 +19,12 @@ export function formatPace(secPerKm: number): string {
 export function formatKm(meters: number): string {
   return (meters / 1000).toFixed(2);
 }
+
+// 10월 25일 (토) 오전 7:30
+export function formatDateTime(iso: string): string {
+  const d = new Date(iso);
+  const day = '일월화수목금토'[d.getDay()];
+  const h = d.getHours();
+  const ampm = h < 12 ? '오전' : '오후';
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${day}) ${ampm} ${h % 12 || 12}:${pad(d.getMinutes())}`;
+}
