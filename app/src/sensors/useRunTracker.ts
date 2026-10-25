@@ -7,7 +7,14 @@ import { runBuffer, type ActiveRun } from '@/storage/runBuffer';
 import { startBarometer } from './altitude';
 import { filterFix } from './gpsFilter';
 import { startStepCounter } from './pedometer';
-import { distanceBetween, paceSecPerKm, segmentDistance, summarizeRun, type TrackPoint } from './summary';
+import {
+  distanceBetween,
+  elevationChange,
+  paceSecPerKm,
+  segmentDistance,
+  summarizeRun,
+  type TrackPoint,
+} from './summary';
 
 export type TrackerStatus = 'idle' | 'starting' | 'running' | 'paused';
 
@@ -18,6 +25,9 @@ export interface TrackerView {
   steps: number;
   avgPace: number; // 초/km, 0이면 아직 계산 불가
   currentPace: number; // 최근 30초 기준
+  cadence: number; // 걸음/분, 최근 30초 기준. 0이면 아직 계산 불가
+  altitudeM: number | null; // 마지막 지점의 고도 (기압계 우선)
+  elevationGainM: number; // 누적 상승 고도 (잡음 무시, 서버 요약과 같은 방식)
   gpsAccuracy: number | null; // 마지막으로 받은 GPS 오차 (m)
   position: LatLng | null; // 마지막으로 받은 GPS 위치 (지도 카메라용)
   route: LatLng[][]; // 지도에 그릴 경로, 일시정지 구간마다 끊어서
@@ -46,6 +56,18 @@ function toRoute(points: TrackPoint[]): LatLng[][] {
 const KEEP_AWAKE_TAG = 'run-tracker';
 const PERSIST_EVERY_MS = 10_000;
 const CURRENT_PACE_WINDOW_MS = 30_000;
+const CADENCE_WINDOW_MS = 30_000;
+
+type StepSample = { elapsedMs: number; steps: number };
+
+// 최근 30초 동안의 걸음수로 분당 걸음수를 셉니다. 샘플이 10초 이상 쌓여야 값을 돌려줍니다.
+// samples에 이번 값을 더하고 창 밖의 오래된 값은 버립니다.
+function updateCadence(samples: StepSample[], elapsedMs: number, steps: number): number {
+  samples.push({ elapsedMs, steps });
+  while (samples.length > 1 && elapsedMs - samples[0].elapsedMs > CADENCE_WINDOW_MS) samples.shift();
+  const dt = elapsedMs - samples[0].elapsedMs;
+  return dt >= 10_000 ? Math.round(((steps - samples[0].steps) * 60_000) / dt) : 0;
+}
 
 const initialView: TrackerView = {
   status: 'idle',
@@ -54,6 +76,9 @@ const initialView: TrackerView = {
   steps: 0,
   avgPace: 0,
   currentPace: 0,
+  cadence: 0,
+  altitudeM: null,
+  elevationGainM: 0,
   gpsAccuracy: null,
   position: null,
   route: [],
@@ -78,6 +103,7 @@ export function useRunTracker() {
   const gpsAccuracy = useRef<number | null>(null);
   const position = useRef<LatLng | null>(null);
   const lastPersist = useRef(0);
+  const stepSamples = useRef<StepSample[]>([]); // 케이던스 계산용 최근 걸음수
 
   const locationSub = useRef<Sub>(null);
   const stepSub = useRef<Sub>(null);
@@ -101,6 +127,8 @@ export function useRunTracker() {
 
   const refresh = useCallback((error: string | null = null) => {
     const elapsed = elapsedNow();
+    const points = run.current?.points ?? [];
+    const lastAltitude = [...points].reverse().find((p) => p.altitude != null)?.altitude ?? null;
     setView({
       status: status.current,
       elapsedMs: elapsed,
@@ -108,9 +136,12 @@ export function useRunTracker() {
       steps: totalSteps(),
       avgPace: paceSecPerKm(distance.current, elapsed / 1000),
       currentPace: status.current === 'running' ? currentPace(elapsed) : 0,
+      cadence: status.current === 'running' ? updateCadence(stepSamples.current, elapsed, totalSteps()) : 0,
+      altitudeM: lastAltitude,
+      elevationGainM: elevationChange(points).gain,
       gpsAccuracy: gpsAccuracy.current,
       position: position.current,
-      route: toRoute(run.current?.points ?? []),
+      route: toRoute(points),
       error,
     });
   }, []);
@@ -204,6 +235,7 @@ export function useRunTracker() {
       resumedAt.current = now;
       stepBase.current = 0;
       stepsNow.current = 0;
+      stepSamples.current = [];
       distance.current = 0;
       lastAccepted.current = null;
       status.current = 'running';

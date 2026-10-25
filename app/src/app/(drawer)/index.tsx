@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, useNavigation } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, LayoutAnimation, PanResponder, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, LayoutAnimation, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { runsApi } from '@/api/endpoints';
@@ -9,7 +9,7 @@ import type { RunCreateRequest } from '@/api/types';
 import { Button } from '@/components/Button';
 import { RoundButton } from '@/components/RoundButton';
 import { RunMap } from '@/components/RunMap';
-import { useRunTracker } from '@/sensors/useRunTracker';
+import { useRunTracker, type TrackerView } from '@/sensors/useRunTracker';
 import { runBuffer } from '@/storage/runBuffer';
 import { colors, radius, shadow, spacing, type } from '@/theme';
 import { formatDuration, formatKm, formatPace } from '@/utils/format';
@@ -49,6 +49,11 @@ export default function RunTrackingScreen() {
       }),
     [],
   );
+
+  // 측정 중에는 지표를 옆으로 넘기다 메뉴가 열리지 않도록 옆 메뉴 스와이프를 끕니다.
+  useEffect(() => {
+    navigation.setOptions({ swipeEnabled: view.status === 'idle' });
+  }, [navigation, view.status]);
 
   // 이전에 측정 중 꺼졌거나 전송에 실패한 기록이 있으면 불러옵니다.
   useEffect(() => {
@@ -154,21 +159,7 @@ export default function RunTrackingScreen() {
                 <Text style={styles.pausedText}>일시정지됨</Text>
               </View>
             ) : null}
-            <View style={styles.main}>
-              <Text style={styles.distance}>{formatKm(view.distanceM)}</Text>
-              <Text style={styles.unit}>km</Text>
-            </View>
-
-            <View style={styles.row}>
-              <Metric label="시간" value={formatDuration(view.elapsedMs)} />
-              <View style={styles.divider} />
-              <Metric label="평균 페이스" value={formatPace(view.avgPace)} />
-              <View style={styles.divider} />
-              <Metric label="현재 페이스" value={formatPace(view.currentPace)} />
-            </View>
-            <Text style={styles.steps}>
-              <Ionicons name="footsteps" size={13} color={colors.muted} /> {view.steps.toLocaleString()} 걸음
-            </Text>
+            <MetricPager view={view} />
           </>
         ) : (
           <Text style={styles.compact}>
@@ -212,6 +203,76 @@ export default function RunTrackingScreen() {
             loading={uploading}
           />
         ) : null}
+      </View>
+    </View>
+  );
+}
+
+const formatMeters = (m: number | null) => (m == null ? '-' : `${Math.round(m)} m`);
+
+// 측정 지표를 옆으로 넘기는 두 페이지: 1) 거리·시간·페이스 2) 케이던스·걸음수·고도
+function MetricPager({ view }: { view: TrackerView }) {
+  const [width, setWidth] = useState(0);
+  const [page, setPage] = useState(0);
+
+  const pages = [
+    {
+      key: 'pace',
+      label: '거리',
+      big: formatKm(view.distanceM),
+      unit: 'km',
+      metrics: [
+        { label: '시간', value: formatDuration(view.elapsedMs) },
+        { label: '평균 페이스', value: formatPace(view.avgPace) },
+        { label: '현재 페이스', value: formatPace(view.currentPace) },
+      ],
+    },
+    {
+      key: 'body',
+      label: '케이던스 (분당 걸음)',
+      big: view.cadence > 0 ? String(view.cadence) : '--',
+      unit: 'spm',
+      metrics: [
+        { label: '걸음수', value: view.steps.toLocaleString() },
+        { label: '현재 고도', value: formatMeters(view.altitudeM) },
+        { label: '누적 상승', value: formatMeters(view.elevationGainM) },
+      ],
+    },
+  ];
+
+  return (
+    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
+      {width > 0 ? (
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
+        >
+          {pages.map((p) => (
+            <View key={p.key} style={{ width }}>
+              <View style={styles.main}>
+                <Text style={styles.distance}>{p.big}</Text>
+                <Text style={styles.unit}>{p.unit}</Text>
+              </View>
+              <Text style={styles.bigLabel}>{p.label}</Text>
+              <View style={styles.row}>
+                {p.metrics.map((m, j) => (
+                  <View key={m.label} style={styles.rowItem}>
+                    {j > 0 ? <View style={styles.divider} /> : null}
+                    <Metric label={m.label} value={m.value} />
+                  </View>
+                ))}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      ) : null}
+
+      <View style={styles.dots} accessibilityLabel={`지표 ${page + 1} / ${pages.length} 페이지, 옆으로 넘겨 보세요`}>
+        {pages.map((p, i) => (
+          <View key={p.key} style={[styles.pageDot, i === page && styles.pageDotActive]} />
+        ))}
       </View>
     </View>
   );
@@ -296,11 +357,15 @@ const styles = StyleSheet.create({
   distance: { ...type.display, fontSize: 72, color: colors.text },
   unit: { ...type.h3, color: colors.muted },
   row: { flexDirection: 'row', alignItems: 'center', marginTop: spacing.md },
+  rowItem: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   divider: { width: StyleSheet.hairlineWidth, height: 32, backgroundColor: colors.border },
+  bigLabel: { ...type.caption, color: colors.muted, textAlign: 'center', marginTop: -4 },
+  dots: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: spacing.lg },
+  pageDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.border },
+  pageDotActive: { width: 18, backgroundColor: colors.primary },
   metric: { flex: 1, alignItems: 'center' },
   metricValue: { ...type.stat, color: colors.text },
   metricLabel: { ...type.caption, color: colors.muted, marginTop: 2 },
-  steps: { ...type.caption, color: colors.muted, textAlign: 'center', marginTop: spacing.lg },
   error: { ...type.caption, color: colors.danger, textAlign: 'center', marginTop: spacing.md },
   controls: {
     flexDirection: 'row',

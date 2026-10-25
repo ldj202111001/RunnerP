@@ -69,7 +69,7 @@ export function encodePolyline(points: TrackPoint[]): string {
 }
 
 // 잡음을 무시한 누적 상승·하강 고도: 기준점에서 임계값 이상 오르내려야 변화로 더하고 기준점을 옮깁니다.
-function elevationChange(points: TrackPoint[]): { gain: number; loss: number } {
+export function elevationChange(points: TrackPoint[]): { gain: number; loss: number } {
   let gain = 0;
   let loss = 0;
   let base: number | null = null;
