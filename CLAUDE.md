@@ -42,7 +42,7 @@ cd server; py -3.13 -m venv .venv; .venv\Scripts\pip install -r requirements.txt
 - 헬스 체크: `http://<PC IP>:8000/api/v1/health`
 - 앱 검사: `cd app; npx expo lint; npx tsc --noEmit`
 
-## 진행 상황 (2026-10-22 기준)
+## 진행 상황 (2026-10-26 기준)
 
 서버 (`server/app/routers/`, 미구현 API는 `_stub.not_implemented()`로 501 반환):
 - 완료: `/health`, `/auth/signup`, `/auth/login`, `/users/me`, `PUT /users/me/profile`, `GET /goals/current`, `POST /runs`(고도 프로필·경사 분석 포함), `GET /runs`, `GET /runs/{id}`
@@ -50,7 +50,10 @@ cd server; py -3.13 -m venv .venv; .venv\Scripts\pip install -r requirements.txt
 - `services/predictor.py`, `planner.py`, `fatigue.py`는 docstring 뼈대만 있음. `ml_models/`는 비어 있음.
 
 앱 (`app/src/app/`):
-- 구현: 로그인(`login.tsx`), 러닝 측정(`(drawer)/index.tsx` + `src/sensors/`의 GPS 필터·걸음수·고도·요약, `src/storage/runBuffer.ts`), 결과 화면 요약·코스 지형 표시(`run-result.tsx`)
+- 구현: 로그인(`login.tsx`), 러닝 측정(`(drawer)/index.tsx` + `src/sensors/`의 GPS 필터·걸음수·고도·요약, `src/storage/runBuffer.ts`), 결과 화면 요약·코스 지형·1km 구간 막대(`run-result.tsx`)
+- UI: 흰색 기반 디자인 토큰(`src/theme.ts`)과 공통 컴포넌트(`src/components/`의 Button·Card·StatTile·TextField·RoundButton), 프로필·로그아웃이 있는 옆 메뉴(`(drawer)/_layout.tsx`)
+- 지도: 네이버 지도(`RunMapNaver.tsx`, 개발 빌드)와 Expo Go용 Leaflet 대체(`RunMapLeaflet.tsx`). 측정 중 지도를 흐리게, 브랜드색 현재 위치 점, 출발·1km 마커
+- 측정 화면 지표는 옆으로 넘기는 2페이지: 1) 거리·시간·평균/현재 페이스 2) 케이던스(최근 30초)·걸음수·현재 경사(최근 약 100m)·현재 고도·누적 상승. 측정 중에는 옆 메뉴 스와이프를 끈다
 - 플레이스홀더: 목표 설정(`goal-setup.tsx`), 오늘(`today.tsx`), 계획(`plan.tsx`), 기록(`history.tsx`), 러닝 상세(`runs/[id].tsx`), 결과 화면의 RPE·완주·메모 입력
 
 다음 순서(설계서 8절): FitRec 전처리 → `features.py` → XGBoost 학습 → predictor·planner 구현 → 추천 API → 남은 화면.
