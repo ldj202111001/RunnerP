@@ -10,11 +10,10 @@
 ```
 app/      Expo(SDK 58) + Expo Router 앱. 지침은 app/AGENTS.md (Expo API는 기억 말고 버전 문서 확인)
 server/   FastAPI + SQLAlchemy + Alembic. 개발 DB는 SQLite(server/dev.db), 운영은 MySQL 예정
-eas.json         EAS 빌드 프로필 (development = 개발 빌드 APK)
+ml/       오프라인 학습 (FitRec → preprocess.py → train.py → server/ml_models/model_v1.json). 지침은 ml/README.md
+app/eas.json     EAS 빌드 프로필 (development = 개발 빌드 APK)
 start_phone.bat  PC LAN IP 감지 → app/.env.local 갱신 → 서버·Expo를 각각 새 창으로 실행
 ```
-
-`ml/`(오프라인 학습: FitRec 전처리 → features.py → XGBoost → model_v1.pkl)은 아직 없다.
 
 ## 설계 원칙 (어기지 말 것)
 
@@ -47,7 +46,11 @@ cd server; py -3.13 -m venv .venv; .venv\Scripts\pip install -r requirements.txt
 서버 (`server/app/routers/`, 미구현 API는 `_stub.not_implemented()`로 501 반환):
 - 완료: `/health`, `/auth/signup`, `/auth/login`, `/users/me`, `PUT /users/me/profile`, `GET /goals/current`, `POST /runs`(고도 프로필·경사 분석 포함), `GET /runs`, `GET /runs/{id}`
 - 미구현: `POST /goals`, `PUT /goals/{id}`, `GET /goals/current/progress`, `PATCH /runs/{id}/feedback`, `/plans/*` 전부, `/predict`, `/stats/weekly`
-- `services/predictor.py`, `planner.py`, `fatigue.py`는 docstring 뼈대만 있음. `ml_models/`는 비어 있음.
+- `services/features.py`(ML 피처, 학습과 공유) 완료. `predictor.py`, `planner.py`, `fatigue.py`는 docstring 뼈대만 있음.
+
+ML (`ml/`):
+- FitRec endomondoMeta → `preprocess.py` → 러닝 318,611건 / 1,191명 → `train.py` → `server/ml_models/model_v1.json` (+ feature_list, meta)
+- 평가(사용자 단위 분리, 페이스 MAE): Riegel 기준선 32.9 → 선형회귀 31.2 → 랜덤포레스트 31.1 → XGBoost 30.3초/km
 
 앱 (`app/src/app/`):
 - 구현: 로그인(`login.tsx`), 러닝 측정(`(drawer)/index.tsx` + `src/sensors/`의 GPS 필터·걸음수·고도·요약, `src/storage/runBuffer.ts`), 결과 화면 요약·코스 지형·1km 구간 막대(`run-result.tsx`)
@@ -56,7 +59,7 @@ cd server; py -3.13 -m venv .venv; .venv\Scripts\pip install -r requirements.txt
 - 측정 화면 지표는 옆으로 넘기는 2페이지: 1) 거리·시간·평균/현재 페이스 2) 케이던스(최근 30초)·걸음수·현재 경사(최근 약 100m)·현재 고도·누적 상승. 측정 중에는 옆 메뉴 스와이프를 끈다
 - 플레이스홀더: 목표 설정(`goal-setup.tsx`), 오늘(`today.tsx`), 계획(`plan.tsx`), 기록(`history.tsx`), 러닝 상세(`runs/[id].tsx`), 결과 화면의 RPE·완주·메모 입력
 
-다음 순서(설계서 8절): FitRec 전처리 → `features.py` → XGBoost 학습 → predictor·planner 구현 → 추천 API → 남은 화면.
+다음 순서(설계서 8절): predictor 구현(model_v1.json 로드, 서버에 xgboost 추가) → planner → 추천 API → 남은 화면.
 
 ## 작업 규칙
 
