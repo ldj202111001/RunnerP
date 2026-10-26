@@ -12,6 +12,7 @@ import type {
   RunCreateRequest,
   RunFeedbackRequest,
   RunFeedbackResponse,
+  RunTotals,
   SignupRequest,
   SignupResponse,
   TodayPlan,
@@ -43,6 +44,10 @@ export const runsApi = {
   list: (params: { from?: string; to?: string; page?: number } = {}) =>
     api.get<Page<Run>>('/runs', { params }).then((r) => r.data),
   get: (id: number) => api.get<Run>(`/runs/${id}`).then((r) => r.data),
+  remove: (id: number) => api.delete(`/runs/${id}`).then(() => undefined),
+  // from·to는 시간대가 붙은 ISO 시각 (to는 포함하지 않음)
+  summary: (params: { from: string; to?: string }) =>
+    api.get<RunTotals>('/runs/summary', { params }).then((r) => r.data),
 };
 
 export const plansApi = {

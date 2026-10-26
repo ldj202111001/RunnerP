@@ -68,6 +68,33 @@ export function encodePolyline(points: TrackPoint[]): string {
   return out;
 }
 
+// encodePolyline의 반대: 서버에 저장된 경로를 지도에 그릴 때 씁니다.
+export function decodePolyline(encoded: string): Pick<TrackPoint, 'latitude' | 'longitude'>[] {
+  const points: Pick<TrackPoint, 'latitude' | 'longitude'>[] = [];
+  let i = 0;
+  let lat = 0;
+  let lng = 0;
+
+  const decode = () => {
+    let result = 0;
+    let shift = 0;
+    let b: number;
+    do {
+      b = encoded.charCodeAt(i++) - 63;
+      result |= (b & 0x1f) << shift;
+      shift += 5;
+    } while (b >= 0x20 && i < encoded.length);
+    return result & 1 ? ~(result >> 1) : result >> 1;
+  };
+
+  while (i < encoded.length) {
+    lat += decode();
+    lng += decode();
+    points.push({ latitude: lat / 1e5, longitude: lng / 1e5 });
+  }
+  return points;
+}
+
 // 잡음을 무시한 누적 상승·하강 고도: 기준점에서 임계값 이상 오르내려야 변화로 더하고 기준점을 옮깁니다.
 export function elevationChange(points: TrackPoint[]): { gain: number; loss: number } {
   let gain = 0;

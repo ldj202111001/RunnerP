@@ -75,3 +75,9 @@ class RunPage(BaseModel):
     items: list[RunOut]
     page: int
     total: int
+
+
+class RunSummary(BaseModel):
+    count: int
+    distance_m: int
+    duration_sec: int

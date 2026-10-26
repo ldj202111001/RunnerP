@@ -46,7 +46,7 @@ FitRec 데이터셋(`ml/data/`, 약 3GB)도 git에 없다. 다시 학습할 때�
 ## 진행 상황 (2026-10-26 기준)
 
 서버 (`server/app/routers/`, 미구현 API는 `_stub.not_implemented()`로 501 반환):
-- 완료: `/health`, `/auth/signup`, `/auth/login`, `/users/me`, `PUT /users/me/profile`, `GET /goals/current`, `POST /runs`(고도 프로필·경사 분석 포함), `GET /runs`, `GET /runs/{id}`, `POST /predict`(XGBoost 예측, 기록 없으면 Riegel 대체)
+- 완료: `/health`, `/auth/signup`, `/auth/login`, `/users/me`, `PUT /users/me/profile`, `GET /goals/current`, `POST /runs`(고도 프로필·경사 분석 포함), `GET /runs`, `GET /runs/{id}`, `DELETE /runs/{id}`, `GET /runs/summary`(기간 합계), `POST /predict`(XGBoost 예측, 기록 없으면 Riegel 대체)
 - 미구현: `POST /goals`, `PUT /goals/{id}`, `GET /goals/current/progress`, `PATCH /runs/{id}/feedback`, `/plans/*` 전부, `/stats/weekly`
 - `services/features.py`(ML 피처, 학습과 공유), `predictor.py`(서버 시작 시 `ml_models/model_v1.json` 로드) 완료. `planner.py`, `fatigue.py`는 docstring 뼈대만 있음.
 
@@ -55,11 +55,11 @@ ML (`ml/`):
 - 평가(사용자 단위 분리, 페이스 MAE): Riegel 기준선 32.9 → 선형회귀 31.2 → 랜덤포레스트 31.1 → XGBoost 30.3초/km
 
 앱 (`app/src/app/`):
-- 구현: 로그인(`login.tsx`), 러닝 측정(`(drawer)/index.tsx` + `src/sensors/`의 GPS 필터·걸음수·고도·요약, `src/storage/runBuffer.ts`), 결과 화면 요약·코스 지형·1km 구간 막대(`run-result.tsx`)
+- 구현: 로그인(`login.tsx`), 러닝 측정(`(drawer)/index.tsx` + `src/sensors/`의 GPS 필터·걸음수·고도·요약, `src/storage/runBuffer.ts`), 결과 화면(`run-result.tsx`), 기록 목록(`(drawer)/history.tsx`: 이번 달 합계·20개씩 이어 불러오기·당겨서 새로고침), 러닝 상세(`runs/[id].tsx`: 삭제 포함). 결과·상세는 `components/RunSummary.tsx`(요약·경로 지도·지표·코스 지형·1km 구간)를 함께 쓴다
 - UI: 흰색 기반 디자인 토큰(`src/theme.ts`)과 공통 컴포넌트(`src/components/`의 Button·Card·StatTile·TextField·RoundButton), 프로필·로그아웃이 있는 옆 메뉴(`(drawer)/_layout.tsx`)
-- 지도: 네이버 지도(`RunMapNaver.tsx`, 개발 빌드)와 Expo Go용 Leaflet 대체(`RunMapLeaflet.tsx`). 측정 중 지도를 흐리게, 브랜드색 현재 위치 점, 출발·1km 마커
+- 지도: 네이버 지도(`RunMapNaver.tsx`, 개발 빌드)와 Expo Go용 Leaflet 대체(`RunMapLeaflet.tsx`). 측정 중 지도를 흐리게, 브랜드색 현재 위치 점, 출발·1km 마커. 지난 러닝 경로는 정지 지도 `RouteMap`(Naver/Leaflet, 경로 전체에 맞춤)
 - 측정 화면 지표는 옆으로 넘기는 2페이지: 1) 거리·시간·평균/현재 페이스 2) 케이던스(최근 30초)·걸음수·현재 경사(최근 약 100m)·현재 고도·누적 상승. 측정 중에는 옆 메뉴 스와이프를 끈다
-- 플레이스홀더: 목표 설정(`goal-setup.tsx`), 오늘(`today.tsx`), 계획(`plan.tsx`), 기록(`history.tsx`), 러닝 상세(`runs/[id].tsx`), 결과 화면의 RPE·완주·메모 입력
+- 플레이스홀더: 목표 설정(`goal-setup.tsx`), 오늘(`today.tsx`), 계획(`plan.tsx`), 기록 탭의 주간 그래프·예상 기록 추이, 결과 화면의 RPE·완주·메모 입력
 
 다음 순서(설계서 8절): planner → 추천 API → 남은 화면.
 

@@ -133,6 +133,13 @@ export interface RunFeedbackResponse {
   reason: string;
 }
 
+// 기간 합계 (GET /runs/summary)
+export interface RunTotals {
+  count: number;
+  distance_m: number;
+  duration_sec: number;
+}
+
 export interface Page<T> {
   items: T[];
   page: number;

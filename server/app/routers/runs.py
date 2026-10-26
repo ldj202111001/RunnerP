@@ -1,13 +1,13 @@
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.db import get_db
 from app.models import Goal, PlannedSession, Run, RunSplit, User, WeeklyPlan
 from app.routers._stub import not_implemented
-from app.schemas.run import RunCreate, RunOut, RunPage
+from app.schemas.run import RunCreate, RunOut, RunPage, RunSummary
 from app.security import get_current_user
 from app.services.terrain import analyze_profile
 
@@ -86,7 +86,38 @@ def list_runs(
     return RunPage(items=[RunOut.model_validate(r) for r in runs], page=page, total=total)
 
 
+def _naive_utc(v: datetime) -> datetime:
+    return v.astimezone(UTC).replace(tzinfo=None) if v.tzinfo else v
+
+
+@router.get("/summary", response_model=RunSummary)
+def summarize_runs(
+    from_: datetime = Query(alias="from"),
+    to: datetime | None = None,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """기간 합계 (횟수·거리·시간). from ≤ started_at < to, 시각은 시간대 포함 ISO 8601
+    앱이 현지 기준 "이번 달"을 구하도록 날짜가 아니라 시각을 받습니다."""
+    conditions = [Run.user_id == user.id, Run.started_at >= _naive_utc(from_)]
+    if to is not None:
+        conditions.append(Run.started_at < _naive_utc(to))
+    count, distance, duration = db.execute(
+        select(func.count(), func.coalesce(func.sum(Run.distance_m), 0), func.coalesce(func.sum(Run.duration_sec), 0))
+        .where(*conditions)
+    ).one()
+    return RunSummary(count=count, distance_m=distance, duration_sec=duration)
+
+
 @router.get("/{run_id}", response_model=RunOut)
 def get_run(run_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """러닝 상세 (경로·구간 페이스 포함)"""
     return _get_own_run(db, user, run_id)
+
+
+@router.delete("/{run_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_run(run_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """러닝 삭제 (잘못 측정한 기록). 1km 구간도 함께 지워집니다."""
+    db.delete(_get_own_run(db, user, run_id))
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
