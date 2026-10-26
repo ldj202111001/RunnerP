@@ -10,7 +10,7 @@ py -3.11 -m venv .venv
 .venv\Scripts\pip install -r requirements.txt
 ```
 
-데이터는 git에 없다 (학술용, 재배포 금지). `data/raw/`에 직접 받는다:
+데이터는 git에 없다 (학술용, 재배포 금지). `data/raw/`에 직접 받는다 (전체 목록·링크는 [DATA.md](DATA.md)):
 
 ```
 curl -L -o data/raw/endomondoMeta.json.gz https://mcauleylab.ucsd.edu/public_datasets/gdrive/fitrec/endomondoMeta.json.gz
