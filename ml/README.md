@@ -1,8 +1,8 @@
-﻿# ml/ ???ㅽ봽?쇱씤 紐⑤뜽 ?숈뒿
+# ml/ — 오프라인 모델 학습
 
-FitRec(Endomondo) ?щ떇 湲곕줉?쇰줈 "理쒓렐 4二?湲곕줉 ???ㅼ쓬 ?щ떇 ?섏씠?? 紐⑤뜽???숈뒿??`server/ml_models/`????ν븳??
+FitRec(Endomondo) 러닝 기록으로 "최근 4주 기록 → 다음 러닝 페이스" 모델을 학습해 `server/ml_models/`에 저장한다.
 
-## 以鍮?(PC留덈떎 ??踰?
+## 준비 (PC마다 한 번)
 
 ```
 cd ml
@@ -10,25 +10,26 @@ py -3.11 -m venv .venv
 .venv\Scripts\pip install -r requirements.txt
 ```
 
-?곗씠?곕뒗 git???녿떎 (?숈닠?? ?щ같??湲덉?). `data/raw/`??吏곸젒 諛쏅뒗??(?꾩껜 紐⑸줉쨌留곹겕??[DATA.md](DATA.md)):
+데이터는 git에 없다 (학술용, 재배포 금지). `data/raw/`에 직접 받는다 (전체 목록·링크는 [DATA.md](DATA.md)):
 
 ```
 curl.exe -L -o data/raw/endomondoMeta.json.gz https://mcauleylab.ucsd.edu/public_datasets/gdrive/fitrec/endomondoMeta.json.gz
 ```
 
-異쒖쿂: [FitRec Datasets](https://mcauleylab.ucsd.edu/public_datasets/gdrive/fitrec/FitRec-Project.html)
-(Ni, Muhlstein, McAuley, WWW'19). 援ш? ?쒕씪?대툕 留곹겕???ㅼ슫濡쒕뱶媛 留됲? ?덉뼱 ??UCSD 二쇱냼瑜??대떎.
+출처: [FitRec Datasets](https://mcauleylab.ucsd.edu/public_datasets/gdrive/fitrec/FitRec-Project.html)
+(Ni, Muhlstein, McAuley, WWW'19). 구글 드라이브 링크는 다운로드가 막혀 있어 위 UCSD 주소를 쓴다.
 
-## ?ㅽ뻾
+## 실행
 
 ```
-.venv\Scripts\python preprocess.py   # endomondoMeta ??data/runs.csv (?щ떇留? ?댁긽移??쒓굅)
-.venv\Scripts\python train.py        # ?쇱쿂 ?앹꽦 ??湲곗??졖룹꽑?뺥쉶洹쨌?쒕뜡?щ젅?ㅽ듃쨌XGBoost 鍮꾧탳 ?????```
+.venv\Scripts\python preprocess.py   # endomondoMeta → data/runs.csv (러닝만, 이상치 제거)
+.venv\Scripts\python train.py        # 피처 생성 → 기준선·선형회귀·랜덤포레스트·XGBoost 비교 → 저장
+```
 
-## ?곗씠??硫붾え
+## 데이터 메모
 
-- `endomondoHR.json.gz`???쒓퀎???꾩튂쨌怨좊룄쨌?щ컯)? ?대룞留덈떎 **500媛?吏?먯쑝濡??섎젮** ?덉뼱 ?꾩껜 嫄곕━쨌?쒓컙??紐?援ы븳??
-  洹몃옒???대룞 ?꾩껜 嫄곕━쨌?쒓컙쨌?곸듅/?섍컯???덈뒗 `endomondoMeta.json.gz`瑜??대떎.
-- ?뚯씪??媛?以꾩? JSON???꾨땲???뚯씠??dict ?쒓린??`ast.literal_eval`濡??쎈뒗??
-- ?쇱쿂 ?뺤쓽???쒕쾭? 媛숈? ?뚯씪 `server/app/services/features.py`瑜??대떎. ?щ컯?샕룹??대뜕?ㅒ룸굹?대뒗 FitRec???녾굅???깆씠 ?ъ? ?딆븘???곗? ?딅뒗??
-- 紐⑤뜽? XGBoost ?먯껜 ?뺤떇(`model_v1.json`)?쇰줈 ??ν븳?? ?뚯씠??踰꾩쟾怨??곴??놁씠 ?쒕쾭?먯꽌 遺덈윭?????덈떎.
+- `endomondoHR.json.gz`의 시계열(위치·고도·심박)은 운동마다 **500개 지점으로 잘려** 있어 전체 거리·시간을 못 구한다.
+  그래서 운동 전체 거리·시간·상승/하강이 있는 `endomondoMeta.json.gz`를 쓴다.
+- 파일의 각 줄은 JSON이 아니라 파이썬 dict 표기라 `ast.literal_eval`로 읽는다.
+- 피처 정의는 서버와 같은 파일 `server/app/services/features.py`를 쓴다. 심박수·케이던스·나이는 FitRec에 없거나 앱이 재지 않아서 쓰지 않는다.
+- 모델은 XGBoost 자체 형식(`model_v1.json`)으로 저장한다. 파이썬 버전과 상관없이 서버에서 불러올 수 있다.
