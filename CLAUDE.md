@@ -10,7 +10,7 @@
 ```
 app/      Expo(SDK 58) + Expo Router 앱. 지침은 app/AGENTS.md (Expo API는 기억 말고 버전 문서 확인)
 server/   FastAPI + SQLAlchemy + Alembic. 개발 DB는 SQLite(server/dev.db), 운영은 MySQL 예정
-ml/       오프라인 학습 (FitRec → preprocess.py → train.py → server/ml_models/model_v1.json). 지침은 ml/README.md
+ml/       오프라인 학습 (FitRec → preprocess.py → train.py → server/ml_models/model_v1.json). 지침은 ml/README.md, 데이터 받기는 ml/DATA.md
 app/eas.json     EAS 빌드 프로필 (development = 개발 빌드 APK)
 start_phone.bat  PC LAN IP 감지 → app/.env.local 갱신 → 서버·Expo를 각각 새 창으로 실행
 ```
@@ -31,6 +31,8 @@ cd app;    npm install
 cd server; py -3.13 -m venv .venv; .venv\Scripts\pip install -r requirements.txt
 ```
 `server/.env`는 git에 없다 (`server/.env.example` 참고, 다른 PC에서 직접 복사).
+개발 DB `server/dev.db`도 git에 없다 (계정·기록을 이어 쓰려면 복사, 아니면 `alembic upgrade head`로 빈 DB).
+FitRec 데이터셋(`ml/data/`, 약 3GB)도 git에 없다. 다시 학습할 때만 `ml/DATA.md`의 링크로 받는다.
 
 실행은 루트의 `start_phone.bat` (폰과 PC가 같은 Wi-Fi, 폰에 설치한 개발 빌드 앱으로 QR 스캔).
 
