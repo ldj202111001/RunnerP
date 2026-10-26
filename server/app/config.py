@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     database_url: str
     jwt_secret: str
     jwt_expire_minutes: int = 60 * 24 * 7
-    model_path: str = "ml_models/model_v1.pkl"
+    model_path: str = "ml_models/model_v1.json"
 
 
 settings = Settings()

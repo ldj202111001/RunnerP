@@ -8,3 +8,5 @@ pydantic[email]==2.14.1
 pydantic-settings==2.16.0
 PyJWT==2.15.1
 bcrypt==5.0.0
+xgboost==3.4.1
+numpy==2.5.4
