@@ -20,6 +20,27 @@ export function formatKm(meters: number): string {
   return (meters / 1000).toFixed(2);
 }
 
+// "28:30" / "1:05:00" → 초. 형식이 틀리면 null
+export function parseDuration(text: string): number | null {
+  const parts = text.trim().split(':');
+  if (parts.length < 2 || parts.length > 3 || parts.some((p) => !/^\d{1,2}$/.test(p))) return null;
+  const [s, m, h = 0] = parts.map(Number).reverse();
+  if (s >= 60 || m >= 60) return null;
+  return h * 3600 + m * 60 + s;
+}
+
+// 로컬 날짜 → "2026-10-27" (서버 DATE 형식)
+export function toISODate(d: Date): string {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// "2026-10-27" → 2026년 10월 27일 (화)
+export function formatDate(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  const day = '일월화수목금토'[new Date(y, m - 1, d).getDay()];
+  return `${y}년 ${m}월 ${d}일 (${day})`;
+}
+
 // 10월 25일 (토) 오전 7:30
 export function formatDateTime(iso: string): string {
   const d = new Date(iso);

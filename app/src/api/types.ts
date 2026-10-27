@@ -28,13 +28,14 @@ export interface LoginResponse {
   access_token: string;
 }
 
+// PUT은 보낸 필드만 바꿈. 신체 정보는 온보딩에서 묻지 않아 모두 선택
 export interface Profile {
-  gender: Gender;
-  birth_year: number;
-  height_cm: number;
-  weight_kg: number;
   weekly_days: number; // 2–6, 가능한 요일 수 이하
   availability?: Partial<Record<Weekday, number>> | null; // 요일별 가능 시간(분), 0 = 불가
+  gender?: Gender | null;
+  birth_year?: number | null;
+  height_cm?: number | null;
+  weight_kg?: number | null;
 }
 
 export interface Me {
@@ -45,11 +46,11 @@ export interface Me {
 }
 
 // 목표
-// type별 필수 필드 (설계서 3.2): HEALTH는 주당 시간, IMPROVE는 종목·기록, RACE는 여기에 대회 날짜
-export type GoalCreateRequest = { recent_5k_sec?: number } & ( // 콜드 스타트용 (Riegel)
-  | { type: 'HEALTH'; weekly_minutes_target: number }
-  | { type: 'IMPROVE'; distance_km: number; target_time_sec: number }
-  | { type: 'RACE'; distance_km: number; target_time_sec: number; target_date: string } // YYYY-MM-DD
+// type별 필드 (설계서 3.2). 비운 값은 서버 기본값: 주 150분, 목표 기록 = 현재 예상의 95%
+export type GoalCreateRequest = { recent_5k_sec?: number } & ( // 콜드 스타트용 (Riegel), 없으면 35분
+  | { type: 'HEALTH'; weekly_minutes_target?: number }
+  | { type: 'IMPROVE'; distance_km: number; target_time_sec?: number }
+  | { type: 'RACE'; distance_km: number; target_date: string; target_time_sec?: number } // YYYY-MM-DD
 );
 
 export interface Goal {

@@ -24,10 +24,11 @@ class UserProfile(Base):
     __tablename__ = "user_profiles"
 
     user_id: Mapped[int] = mapped_column(BigIntPK, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
-    gender: Mapped[str] = mapped_column(Enum("M", "F", "OTHER", name="gender"))
-    birth_year: Mapped[int] = mapped_column(SmallInteger)
-    height_cm: Mapped[Decimal] = mapped_column(Numeric(5, 1))
-    weight_kg: Mapped[Decimal] = mapped_column(Numeric(5, 1))
+    # 신체 정보는 온보딩에서 묻지 않으므로 모두 선택 (성별만 ML 피처, 없으면 결측)
+    gender: Mapped[str | None] = mapped_column(Enum("M", "F", "OTHER", name="gender"))
+    birth_year: Mapped[int | None] = mapped_column(SmallInteger)
+    height_cm: Mapped[Decimal | None] = mapped_column(Numeric(5, 1))
+    weight_kg: Mapped[Decimal | None] = mapped_column(Numeric(5, 1))
     weekly_days: Mapped[int] = mapped_column(SmallInteger)  # 주당 운동 일수 (2–6)
     # 요일별 가능 시간(분), 예: {"mon": 30, "tue": 0, …}. NULL이면 모든 요일 60분
     availability: Mapped[dict[str, int] | None] = mapped_column(JSON)
