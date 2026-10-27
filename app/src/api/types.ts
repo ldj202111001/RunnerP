@@ -4,6 +4,8 @@ export type Gender = 'M' | 'F' | 'OTHER';
 export type SessionType = 'EASY' | 'LONG' | 'TEMPO' | 'INTERVAL' | 'REST';
 export type SessionStatus = 'PLANNED' | 'DONE' | 'MISSED';
 export type GoalStatus = 'ACTIVE' | 'DONE' | 'DROPPED';
+export type GoalType = 'HEALTH' | 'IMPROVE' | 'RACE'; // 건강·습관 / 기록 향상 / 대회 준비
+export type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
 // 인증·사용자
 export interface SignupRequest {
@@ -31,7 +33,8 @@ export interface Profile {
   birth_year: number;
   height_cm: number;
   weight_kg: number;
-  weekly_days: number; // 3–6
+  weekly_days: number; // 2–6, 가능한 요일 수 이하
+  availability?: Partial<Record<Weekday, number>> | null; // 요일별 가능 시간(분), 0 = 불가
 }
 
 export interface Me {
@@ -42,28 +45,37 @@ export interface Me {
 }
 
 // 목표
-export interface GoalCreateRequest {
-  distance_km: number; // 5 / 10 / 21.0975 / 42.195
-  target_time_sec: number;
-  target_date: string; // YYYY-MM-DD
-  recent_5k_time_sec?: number; // 콜드 스타트용 (Riegel)
-}
+// type별 필수 필드 (설계서 3.2): HEALTH는 주당 시간, IMPROVE는 종목·기록, RACE는 여기에 대회 날짜
+export type GoalCreateRequest = { recent_5k_sec?: number } & ( // 콜드 스타트용 (Riegel)
+  | { type: 'HEALTH'; weekly_minutes_target: number }
+  | { type: 'IMPROVE'; distance_km: number; target_time_sec: number }
+  | { type: 'RACE'; distance_km: number; target_time_sec: number; target_date: string } // YYYY-MM-DD
+);
 
 export interface Goal {
   id: number;
-  distance_km: number;
-  target_time_sec: number;
-  target_date: string;
+  type: GoalType;
+  distance_km: number | null; // 5 / 10 / 21.0975 / 42.195, HEALTH는 null
+  target_time_sec: number | null;
+  target_date: string | null; // RACE만
+  weekly_minutes_target: number | null; // HEALTH만
   baseline_time_sec: number | null;
   status: GoalStatus;
 }
 
-export interface GoalProgress {
-  goal_id: number;
-  target_time_sec: number;
-  predicted_time_sec: number;
-  weeks_left: number;
-}
+export type GoalProgress =
+  | { type: 'HEALTH'; goal_id: number; minutes_this_week: number; weekly_minutes_target: number; streak_weeks: number }
+  | {
+      type: 'IMPROVE' | 'RACE';
+      goal_id: number;
+      target_time_sec: number;
+      baseline_time_sec: number | null;
+      predicted_time_sec: number;
+      weeks_left: number | null; // RACE만
+      phase: PlanPhase | null; // RACE만
+    };
+
+export type PlanPhase = 'BASE' | 'BUILD' | 'PEAK' | 'TAPER' | 'RECOVERY' | 'MAINTAIN';
 
 // 러닝 기록
 export interface Split {
@@ -118,6 +130,8 @@ export interface PlannedSession {
   target_rpe: number;
   description: string;
   status: SessionStatus;
+  condition: number | null; // 출발 전 컨디션 1–5
+  downgraded: boolean; // 컨디션 때문에 한 단계 낮췄는지
 }
 
 export interface RunFeedbackResponse {
@@ -157,6 +171,7 @@ export interface WeekPlan {
   sessions: PlannedSession[];
   target_load: number;
   target_distance_km: number;
+  phase: PlanPhase;
   easy_ratio: number;
   acwr: number | null; // 기록 4주 미만이면 null
   reason: string;

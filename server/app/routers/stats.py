@@ -20,7 +20,8 @@ def predict(body: PredictRequest, user: User = Depends(get_current_user), db: Se
         goal = db.scalar(select(Goal).where(Goal.user_id == user.id, Goal.status == "ACTIVE"))
         if goal is None:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "distance_km를 보내거나 목표를 먼저 설정하세요.")
-        distance_km = float(goal.distance_km)
+        # HEALTH 목표는 거리가 없으므로 5K 기준 (설계서 5.2 ①)
+        distance_km = float(goal.distance_km) if goal.distance_km is not None else 5.0
 
     result = predictor.predict_for_user(db, user, distance_km, body.recent_5k_sec)
     if result is None:

@@ -17,7 +17,11 @@ class WeeklyPlan(Base):
     target_load: Mapped[int] = mapped_column(SmallInteger)  # ACWR로 결정한 주간 부하
     target_distance_km: Mapped[Decimal] = mapped_column(Numeric(5, 1))
     acwr_at_creation: Mapped[Decimal | None] = mapped_column(Numeric(4, 2))  # 기록 4주 미만이면 NULL
-    easy_ratio: Mapped[Decimal] = mapped_column(Numeric(3, 2))  # 0.80 목표
+    # 훈련 단계 (설계서 5.3 4). HEALTH는 MAINTAIN
+    phase: Mapped[str] = mapped_column(
+        Enum("BASE", "BUILD", "PEAK", "TAPER", "RECOVERY", "MAINTAIN", name="plan_phase")
+    )
+    easy_ratio: Mapped[Decimal] = mapped_column(Numeric(3, 2))  # HEALTH 0.90, 그 외 0.80
     reason: Mapped[str] = mapped_column(String(255))
     version: Mapped[int] = mapped_column(SmallInteger, default=1)  # 재조정 시 +1 (이력 보존)
     is_current: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -43,5 +47,7 @@ class PlannedSession(Base):
     status: Mapped[str] = mapped_column(
         Enum("PLANNED", "DONE", "MISSED", name="session_status"), default="PLANNED"
     )
+    condition: Mapped[int | None] = mapped_column(SmallInteger)  # 출발 전 컨디션 1–5 (선택 기능)
+    downgraded: Mapped[bool] = mapped_column(Boolean, default=False)  # 컨디션 때문에 한 단계 낮췄는지
 
     weekly_plan: Mapped[WeeklyPlan] = relationship(back_populates="sessions")
