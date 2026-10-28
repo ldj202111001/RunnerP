@@ -1,4 +1,5 @@
 import type { RunCreateRequest, Split } from '@/api/types';
+import { PROFILE_INTERVAL_M } from '@/engine/terrain';
 
 // 측정 중 버퍼에 쌓는 지점 (필터를 통과한 것만)
 export interface TrackPoint {
@@ -17,8 +18,6 @@ const toRad = (deg: number) => (deg * Math.PI) / 180;
 // 고도가 이만큼 오르내려야 변화로 인정 (센서 잡음 무시)
 const ELEVATION_THRESHOLD_M = 3;
 const MAX_PACE_SEC = 32_767; // DB SMALLINT 상한
-// 고도 프로필 간격. 서버의 경사 계산(services/terrain.py)과 같은 값이어야 합니다.
-export const PROFILE_INTERVAL_M = 100;
 
 // 두 지점 사이 거리 (haversine, m)
 export function distanceBetween(

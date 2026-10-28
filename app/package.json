@@ -44,7 +44,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "check:engine": "tsc -p scripts/tsconfig.engine.json && node scripts/check-engine.mjs"
   },
   "private": true
 }

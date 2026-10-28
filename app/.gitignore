@@ -42,3 +42,6 @@ yarn-error.*
 
 # 네이버 지도 키 등 (app/.env.example 참고)
 /.env
+
+# engine check build (npm run check:engine)
+scripts/.engine-check/

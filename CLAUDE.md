@@ -44,8 +44,9 @@ FitRec 데이터셋(`ml/data/`, 약 3GB)도 git에 없다. 다시 학습할 때�
 - 서버만: `cd server; .venv\Scripts\python -m alembic upgrade head; .venv\Scripts\python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload`
 - 헬스 체크: `http://<PC IP>:8000/api/v1/health`
 - 앱 검사: `cd app; npx expo lint; npx tsc --noEmit`
+- 엔진 검사: `cd app; npm run check:engine` (`src/engine`의 모델 예측·피처·지형이 파이썬과 같은 값인지, 검사 데이터는 `app/scripts/engine-parity.json`)
 
-## 진행 상황 (2026-10-27 기준)
+## 진행 상황 (2026-10-29 기준)
 
 서버 (`server/app/routers/`, 미구현 API는 `_stub.not_implemented()`로 501 반환):
 - 완료: `/health`, `/auth/signup`, `/auth/login`, `/users/me`, `PUT /users/me/profile`(보낸 필드만 변경, 신체 정보 선택), `POST /goals`·`PUT /goals/{id}`(목표 유형 HEALTH/IMPROVE/RACE, 초기 예측을 baseline·predictions에 저장, 계획 생성은 planner 이후), `GET /goals/current`, `POST /runs`(고도 프로필·경사 분석 포함), `GET /runs`, `GET /runs/{id}`, `DELETE /runs/{id}`, `GET /runs/summary`(기간 합계), `POST /predict`(XGBoost 예측, 기록 없으면 Riegel 대체)
@@ -55,6 +56,11 @@ FitRec 데이터셋(`ml/data/`, 약 3GB)도 git에 없다. 다시 학습할 때�
 ML (`ml/`):
 - FitRec endomondoMeta → `preprocess.py` → 러닝 318,611건 / 1,191명 → `train.py` → `server/ml_models/model_v1.json` (+ feature_list, meta)
 - 평가(사용자 단위 분리, 페이스 MAE): Riegel 기준선 32.9 → 선형회귀 31.2 → 랜덤포레스트 31.1 → XGBoost 30.3초/km
+- `export_app_model.py`: 학습한 모델 → 앱용 가벼운 JSON(`app/assets/model/model_v1.json`, 1.4MB) + 엔진 검사 데이터. 재학습하면 이것도 다시 실행
+
+폰 단독 전환 (설계서 8절 5단계):
+- 1) 앱에서 예측 완료: `app/src/engine/` — `model.ts`(XGBoost 나무를 직접 따라가 예측, float32 비교), `features.ts`, `predictor.ts`(모델 + Riegel 대체), `terrain.ts`. 파이썬과 일치 확인(모델 600건 최대 차이 0.0008초/km, 피처 80건 동일, 지형은 .5 반올림 방향만 다름). 아직 화면에 연결하지 않았고 화면은 서버 API를 씀
+- 남은 것: 2) 폰 SQLite(`expo-sqlite`, 개발 빌드 다시 필요) 3) 목표 저장·러닝 저장을 앱으로 옮겨 화면 연결 4) 로그인 제거
 
 앱 (`app/src/app/`):
 - 구현: 로그인(`login.tsx`), 목표 설정 온보딩(`goal-setup.tsx`: 목적 3종 → 기록·대회만 종목·대회 날짜 → 주 몇 회·5K(선택) → 요약), 러닝 측정(`(drawer)/index.tsx` + `src/sensors/`의 GPS 필터·걸음수·고도·요약, `src/storage/runBuffer.ts`), 결과 화면(`run-result.tsx`), 기록 목록(`(drawer)/history.tsx`: 이번 달 합계·20개씩 이어 불러오기·당겨서 새로고침), 러닝 상세(`runs/[id].tsx`: 삭제 포함). 결과·상세는 `components/RunSummary.tsx`(요약·경로 지도·지표·코스 지형·1km 구간)를 함께 쓴다
@@ -63,7 +69,7 @@ ML (`ml/`):
 - 측정 화면 지표는 옆으로 넘기는 2페이지: 1) 거리·시간·평균/현재 페이스 2) 케이던스(최근 30초)·걸음수·현재 경사(최근 약 100m)·현재 고도·누적 상승. 측정 중에는 옆 메뉴 스와이프를 끈다
 - 플레이스홀더: 오늘(`today.tsx`), 계획(`plan.tsx`), 기록 탭의 주간 그래프·예상 기록 추이, 결과 화면의 RPE·완주·메모 입력
 
-다음 순서(설계서 8절): 폰 단독 전환(모델을 앱에서 예측 → 폰 SQLite → 계산 코드 이전 → 로그인 제거) → 앱 안에 planner → 남은 화면.
+다음 순서(설계서 8절): 폰 단독 전환(~~모델을 앱에서 예측~~ → 폰 SQLite → 계산 코드 이전 → 로그인 제거) → 앱 안에 planner → 남은 화면.
 
 ## 작업 규칙
 

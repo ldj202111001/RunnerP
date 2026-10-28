@@ -24,6 +24,7 @@ curl.exe -L -o data/raw/endomondoMeta.json.gz https://mcauleylab.ucsd.edu/public
 ```
 .venv\Scripts\python preprocess.py   # endomondoMeta → data/runs.csv (러닝만, 이상치 제거)
 .venv\Scripts\python train.py        # 피처 생성 → 기준선·선형회귀·랜덤포레스트·XGBoost 비교 → 저장
+.venv\Scripts\python export_app_model.py  # 앱용 모델(app/assets/model/) + 엔진 검사 데이터 → 다음에 cd ..\app; npm run check:engine
 ```
 
 ## 데이터 메모
