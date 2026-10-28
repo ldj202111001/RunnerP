@@ -31,6 +31,11 @@ export function bundledModel(): Model {
   return bundled;
 }
 
+// 검사(scripts/check-db.mjs)처럼 앱 번들 밖에서 돌릴 때 파일에서 읽은 모델을 넣습니다.
+export function setModel(model: Model): void {
+  bundled = model;
+}
+
 export function predictPace(model: Model, features: Features): number {
   const pace = predictRaw(
     model,

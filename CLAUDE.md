@@ -45,6 +45,7 @@ FitRec 데이터셋(`ml/data/`, 약 3GB)도 git에 없다. 다시 학습할 때�
 - 헬스 체크: `http://<PC IP>:8000/api/v1/health`
 - 앱 검사: `cd app; npx expo lint; npx tsc --noEmit`
 - 엔진 검사: `cd app; npm run check:engine` (`src/engine`의 모델 예측·피처·지형이 파이썬과 같은 값인지, 검사 데이터는 `app/scripts/engine-parity.json`)
+- 폰 DB 검사: `cd app; npm run check:db` (`src/db`를 Node 내장 SQLite로 실행해 저장·조회·목표 예측·입력 검사 확인)
 
 ## 진행 상황 (2026-10-29 기준)
 
@@ -60,7 +61,8 @@ ML (`ml/`):
 
 폰 단독 전환 (설계서 8절 5단계):
 - 1) 앱에서 예측 완료: `app/src/engine/` — `model.ts`(XGBoost 나무를 직접 따라가 예측, float32 비교), `features.ts`, `predictor.ts`(모델 + Riegel 대체), `terrain.ts`. 파이썬과 일치 확인(모델 600건 최대 차이 0.0008초/km, 피처 80건 동일, 지형은 .5 반올림 방향만 다름). 아직 화면에 연결하지 않았고 화면은 서버 API를 씀
-- 남은 것: 2) 폰 SQLite(`expo-sqlite`, 개발 빌드 다시 필요) 3) 목표 저장·러닝 저장을 앱으로 옮겨 화면 연결 4) 로그인 제거
+- 2) 폰 SQLite 완료: `app/src/db/` — `schema.ts`(테이블 7개, users 없음, 프로필 한 줄, `PRAGMA user_version` 마이그레이션), `profile.ts`·`goals.ts`(목표 생성 시 앱 안에서 예측)·`runs.ts`(저장 시 지형·케이던스 계산), 화면용 입구 `index.ts`(`profileDb`·`goalsDb`·`runsDb`, 예전 `usersApi`·`goalsApi`·`runsApi`와 같은 모양). `expo-sqlite`를 넣었으므로 **개발 빌드를 다시 만들어야 함**. 아직 화면은 서버 API를 씀
+- 남은 것: 3) 화면을 `src/db`로 바꾸기 4) 로그인 제거, `api/`·`auth/` 정리
 
 앱 (`app/src/app/`):
 - 구현: 로그인(`login.tsx`), 목표 설정 온보딩(`goal-setup.tsx`: 목적 3종 → 기록·대회만 종목·대회 날짜 → 주 몇 회·5K(선택) → 요약), 러닝 측정(`(drawer)/index.tsx` + `src/sensors/`의 GPS 필터·걸음수·고도·요약, `src/storage/runBuffer.ts`), 결과 화면(`run-result.tsx`), 기록 목록(`(drawer)/history.tsx`: 이번 달 합계·20개씩 이어 불러오기·당겨서 새로고침), 러닝 상세(`runs/[id].tsx`: 삭제 포함). 결과·상세는 `components/RunSummary.tsx`(요약·경로 지도·지표·코스 지형·1km 구간)를 함께 쓴다
@@ -69,7 +71,7 @@ ML (`ml/`):
 - 측정 화면 지표는 옆으로 넘기는 2페이지: 1) 거리·시간·평균/현재 페이스 2) 케이던스(최근 30초)·걸음수·현재 경사(최근 약 100m)·현재 고도·누적 상승. 측정 중에는 옆 메뉴 스와이프를 끈다
 - 플레이스홀더: 오늘(`today.tsx`), 계획(`plan.tsx`), 기록 탭의 주간 그래프·예상 기록 추이, 결과 화면의 RPE·완주·메모 입력
 
-다음 순서(설계서 8절): 폰 단독 전환(~~모델을 앱에서 예측~~ → 폰 SQLite → 계산 코드 이전 → 로그인 제거) → 앱 안에 planner → 남은 화면.
+다음 순서(설계서 8절): 폰 단독 전환(~~모델을 앱에서 예측~~ → ~~폰 SQLite~~ → 화면 연결 → 로그인 제거) → 앱 안에 planner → 남은 화면.
 
 ## 작업 규칙
 

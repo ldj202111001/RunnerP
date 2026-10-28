@@ -8,12 +8,18 @@
     "strict": true,
     "skipLibCheck": true,
     "rootDir": "../src",
-    "outDir": ".engine-check"
+    "outDir": ".engine-check",
+    "paths": { "@/*": ["../src/*"] }
   },
   "files": [
     "../src/engine/model.ts",
     "../src/engine/features.ts",
     "../src/engine/predictor.ts",
-    "../src/engine/terrain.ts"
+    "../src/engine/terrain.ts",
+    "../src/db/sqlite.ts",
+    "../src/db/schema.ts",
+    "../src/db/profile.ts",
+    "../src/db/runs.ts",
+    "../src/db/goals.ts"
   ]
 }
