@@ -1,4 +1,4 @@
-import type { RunCreateRequest, Split } from '@/api/types';
+import type { RunCreateRequest, Split } from '@/db/types';
 import { PROFILE_INTERVAL_M } from '@/engine/terrain';
 
 // 측정 중 버퍼에 쌓는 지점 (필터를 통과한 것만)
@@ -67,7 +67,7 @@ export function encodePolyline(points: TrackPoint[]): string {
   return out;
 }
 
-// encodePolyline의 반대: 서버에 저장된 경로를 지도에 그릴 때 씁니다.
+// encodePolyline의 반대: 저장된 경로를 지도에 그릴 때 씁니다.
 export function decodePolyline(encoded: string): Pick<TrackPoint, 'latitude' | 'longitude'>[] {
   const points: Pick<TrackPoint, 'latitude' | 'longitude'>[] = [];
   let i = 0;
@@ -115,7 +115,7 @@ export function elevationChange(points: TrackPoint[]): { gain: number; loss: num
 }
 
 // 코스 고도 프로필: 출발점부터 PROFILE_INTERVAL_M마다의 고도 (선형 보간, 0.1m 단위).
-// 원본 시계열 대신 이것만 보내고, 경사는 서버가 이 프로필로 계산합니다.
+// 원본 시계열 대신 이것만 저장하고, 경사는 저장할 때 이 프로필로 계산합니다 (engine/terrain).
 export function elevationProfile(points: TrackPoint[]): number[] {
   const profile: number[] = [];
   let distance = 0;
@@ -147,7 +147,7 @@ export function elevationProfile(points: TrackPoint[]): number[] {
   return profile;
 }
 
-// 러닝 종료 시 버퍼를 요약값으로 바꿉니다. 원본 시계열은 서버로 보내지 않습니다.
+// 러닝 종료 시 버퍼를 요약값으로 바꿉니다. 원본 시계열은 저장하지 않습니다.
 // durationSec은 일시정지 시간을 뺀 실제 운동 시간입니다.
 export function summarizeRun(
   points: TrackPoint[],

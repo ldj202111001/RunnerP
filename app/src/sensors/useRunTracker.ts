@@ -2,7 +2,7 @@ import * as Location from 'expo-location';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { RunCreateRequest } from '@/api/types';
+import type { RunCreateRequest } from '@/db/types';
 import { runBuffer, type ActiveRun } from '@/storage/runBuffer';
 import { startBarometer } from './altitude';
 import { filterFix } from './gpsFilter';
@@ -27,7 +27,7 @@ export interface TrackerView {
   currentPace: number; // 최근 30초 기준
   cadence: number; // 걸음/분, 최근 30초 기준. 0이면 아직 계산 불가
   altitudeM: number | null; // 마지막 지점의 고도 (기압계 우선)
-  elevationGainM: number; // 누적 상승 고도 (잡음 무시, 서버 요약과 같은 방식)
+  elevationGainM: number; // 누적 상승 고도 (잡음 무시, 저장 요약과 같은 방식)
   gradePct: number | null; // 최근 약 100m의 평균 경사 (%), 오르막이 +. 50m 미만이면 null
   gpsAccuracy: number | null; // 마지막으로 받은 GPS 오차 (m)
   position: LatLng | null; // 마지막으로 받은 GPS 위치 (지도 카메라용)
@@ -323,8 +323,8 @@ export function useRunTracker() {
     setView(initialView);
   }, [stopSensors]);
 
-  // 측정을 끝내고 서버로 보낼 요약을 만듭니다.
-  // 요약은 먼저 '전송 대기'로 저장해 두므로, 전송이 실패해도 기록은 남습니다.
+  // 측정을 끝내고 폰 DB에 저장할 요약을 만듭니다.
+  // 요약은 먼저 '저장 대기'로 보관해 두므로, 저장이 실패해도 기록은 남습니다.
   const finish = useCallback(async (): Promise<RunCreateRequest | null> => {
     const current = run.current;
     if (!current) return null;

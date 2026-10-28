@@ -1,7 +1,7 @@
 // 목표. 예전 POST /goals, GET /goals/current, PUT /goals/{id}
 // 목표를 만들거나 고칠 때 지금 실력을 예측(engine/predictor)해 시작 기록과 예측 이력을 남깁니다.
 
-import type { Goal, GoalCreateRequest } from '@/api/types';
+import type { Goal, GoalCreateRequest } from './types';
 
 import { predict } from '../engine/predictor';
 import { getProfile } from './profile';

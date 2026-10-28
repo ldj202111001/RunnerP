@@ -1,6 +1,6 @@
 // 프로필 (한 줄뿐). 예전 GET /users/me, PUT /users/me/profile
 
-import type { Gender, Profile, Weekday } from '@/api/types';
+import type { Gender, Profile, Weekday } from './types';
 
 import { fromJson, toJson, ValidationError, type Db } from './sqlite';
 

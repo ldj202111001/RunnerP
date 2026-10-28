@@ -1,12 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Drawer, DrawerContentScrollView, DrawerItemList, type DrawerContentComponentProps } from 'expo-router/drawer';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { usersApi } from '@/api/endpoints';
-import { useSession } from '@/auth/session';
+import { goalsDb } from '@/db';
+import type { Goal } from '@/db/types';
 import { colors, radius, spacing, type } from '@/theme';
+import { formatDate, formatDuration } from '@/utils/format';
 
 // 왼쪽 위 ☰ 버튼으로 여는 옆 메뉴: 러닝(지도·측정) / 추천 / 계획 / 기록
 // 앱을 켜면 index(지도)에서 시작합니다. 지도 화면은 헤더 없이 떠 있는 메뉴 버튼을 씁니다.
@@ -61,56 +62,54 @@ export default function DrawerLayout() {
   );
 }
 
-// 위: 프로필 머리말 / 가운데: 메뉴 / 아래: 로그아웃
+const DISTANCE_LABELS: Record<number, string> = { 5: '5K', 10: '10K', 21.0975: '하프', 42.195: '풀' };
+
+// 머리말에 보여 줄 목표 한 줄 (제목·부제)
+function describeGoal(goal: Goal): [string, string] {
+  const label = goal.distance_km ? (DISTANCE_LABELS[goal.distance_km] ?? `${goal.distance_km}km`) : '';
+  switch (goal.type) {
+    case 'HEALTH':
+      return ['건강하게 꾸준히', `주 ${goal.weekly_minutes_target ?? 150}분 달리기`];
+    case 'IMPROVE':
+      return [`${label} 기록 단축`, goal.target_time_sec ? `목표 ${formatDuration(goal.target_time_sec * 1000)}` : ''];
+    case 'RACE':
+      return [`${label} 대회 준비`, goal.target_date ? formatDate(goal.target_date) : ''];
+  }
+}
+
+// 위: 목표 머리말 / 아래: 메뉴
 function DrawerMenu(props: DrawerContentComponentProps) {
-  const { signOut } = useSession();
   const insets = useSafeAreaInsets();
-  const [nickname, setNickname] = useState<string | null>(null);
-  const [email, setEmail] = useState<string | null>(null);
+  const [goal, setGoal] = useState<Goal | null>(null);
 
   useEffect(() => {
-    usersApi
-      .me()
-      .then((me) => {
-        setNickname(me.nickname);
-        setEmail(me.email);
-      })
+    goalsDb
+      .current()
+      .then(setGoal)
       .catch(() => {
-        // 서버 없이 둘러보는 중이면 기본 문구를 보여줍니다.
+        // 목표를 못 읽으면 기본 문구를 보여줍니다.
       });
   }, []);
 
-  const confirmSignOut = () =>
-    Alert.alert('로그아웃', '로그아웃할까요?', [
-      { text: '취소', style: 'cancel' },
-      { text: '로그아웃', style: 'destructive', onPress: () => void signOut() },
-    ]);
+  const [title, subtitle] = goal ? describeGoal(goal) : ['러너', '오늘도 가볍게 달려볼까요?'];
 
   return (
     <View style={styles.root}>
       <View style={[styles.header, { paddingTop: insets.top + spacing.xl }]}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{nickname ? nickname.slice(0, 1) : '🏃'}</Text>
+          <Text style={styles.avatarText}>🏃</Text>
         </View>
         <Text style={styles.name} numberOfLines={1}>
-          {nickname ?? '러너'}
+          {title}
         </Text>
-        <Text style={styles.email} numberOfLines={1}>
-          {email ?? '오늘도 가볍게 달려볼까요?'}
+        <Text style={styles.subtitle} numberOfLines={1}>
+          {subtitle}
         </Text>
       </View>
 
-      <DrawerContentScrollView {...props} contentContainerStyle={styles.items}>
+      <DrawerContentScrollView {...props} contentContainerStyle={[styles.items, { paddingBottom: insets.bottom }]}>
         <DrawerItemList {...props} />
       </DrawerContentScrollView>
-
-      <Pressable
-        style={({ pressed }) => [styles.signOut, { marginBottom: insets.bottom + spacing.lg }, pressed && styles.pressed]}
-        onPress={confirmSignOut}
-      >
-        <Ionicons name="log-out-outline" size={22} color={colors.muted} />
-        <Text style={styles.signOutText}>로그아웃</Text>
-      </Pressable>
     </View>
   );
 }
@@ -134,17 +133,6 @@ const styles = StyleSheet.create({
   },
   avatarText: { ...type.h2, color: '#fff' },
   name: { ...type.h3, color: colors.text },
-  email: { ...type.caption, color: colors.muted, marginTop: 2 },
+  subtitle: { ...type.caption, color: colors.muted, marginTop: 2 },
   items: { paddingTop: spacing.md, paddingHorizontal: spacing.sm },
-  signOut: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    marginHorizontal: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
-  },
-  pressed: { backgroundColor: colors.surfaceAlt },
-  signOutText: { ...type.bodyStrong, color: colors.muted },
 });

@@ -1,7 +1,7 @@
 // 러닝 기록. 예전 POST·GET·DELETE /runs, GET /runs/summary
 // 저장할 때 고도 프로필로 코스 지형(engine/terrain)과 케이던스를 계산해 함께 넣습니다.
 
-import type { Page, Run, RunCreateRequest, RunTotals, Split } from '@/api/types';
+import type { Page, Run, RunCreateRequest, RunTotals, Split } from './types';
 
 import type { RunRecord } from '../engine/features';
 import { analyzeProfile } from '../engine/terrain';

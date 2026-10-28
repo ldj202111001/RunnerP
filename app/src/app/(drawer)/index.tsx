@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, LayoutAnimation, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { runsApi } from '@/api/endpoints';
-import type { RunCreateRequest } from '@/api/types';
+import { runsDb } from '@/db';
+import type { RunCreateRequest } from '@/db/types';
 import { Button } from '@/components/Button';
 import { RoundButton } from '@/components/RoundButton';
 import { RunMap } from '@/components/RunMap';
@@ -29,7 +29,7 @@ function gpsLabel(accuracy: number | null): { text: string; color: string } {
 export default function RunTrackingScreen() {
   const { view, start, pause, resume, finish, discard, restore } = useRunTracker();
   const [pending, setPending] = useState<RunCreateRequest | null>(null);
-  const [uploading, setUploading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [follow, setFollow] = useState(true);
   const [panelOpen, setPanelOpen] = useState(true);
   const insets = useSafeAreaInsets();
@@ -55,7 +55,7 @@ export default function RunTrackingScreen() {
     navigation.setOptions({ swipeEnabled: view.status === 'idle' });
   }, [navigation, view.status]);
 
-  // 이전에 측정 중 꺼졌거나 전송에 실패한 기록이 있으면 불러옵니다.
+  // 이전에 측정 중 꺼졌거나 저장에 실패한 기록이 있으면 불러옵니다.
   useEffect(() => {
     (async () => {
       if (await restore()) {
@@ -65,18 +65,18 @@ export default function RunTrackingScreen() {
     })();
   }, [restore]);
 
-  const upload = async (summary: RunCreateRequest) => {
-    setUploading(true);
+  const saveRun = async (summary: RunCreateRequest) => {
+    setSaving(true);
     try {
-      const saved = await runsApi.create(summary);
+      const saved = await runsDb.create(summary);
       await runBuffer.clearPending();
       setPending(null);
       router.push({ pathname: '/run-result', params: { runId: String(saved.id) } });
     } catch {
       setPending(summary);
-      Alert.alert('저장 실패', '서버에 저장하지 못했습니다. 기록은 휴대폰에 보관되어 있으니 "다시 보내기"를 눌러 주세요.');
+      Alert.alert('저장 실패', '기록을 저장하지 못했습니다. 측정한 내용은 보관되어 있으니 "다시 저장하기"를 눌러 주세요.');
     } finally {
-      setUploading(false);
+      setSaving(false);
     }
   };
 
@@ -93,7 +93,7 @@ export default function RunTrackingScreen() {
               text: '종료',
               onPress: async () => {
                 const summary = await finish();
-                if (summary) await upload(summary);
+                if (summary) await saveRun(summary);
               },
             },
       ],
@@ -196,11 +196,11 @@ export default function RunTrackingScreen() {
         {view.status === 'idle' && pending ? (
           <Button
             variant="secondary"
-            icon="cloud-upload-outline"
+            icon="save-outline"
             style={styles.retry}
-            label={`저장 안 된 기록 다시 보내기 (${formatKm(pending.distance_m)} km)`}
-            onPress={() => void upload(pending)}
-            loading={uploading}
+            label={`저장 안 된 기록 다시 저장하기 (${formatKm(pending.distance_m)} km)`}
+            onPress={() => void saveRun(pending)}
+            loading={saving}
           />
         ) : null}
       </View>

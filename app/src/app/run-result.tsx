@@ -4,14 +4,14 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { runsApi } from '@/api/endpoints';
-import type { Run } from '@/api/types';
+import { runsDb } from '@/db';
+import type { Run } from '@/db/types';
 import { Button } from '@/components/Button';
 import { Card, SectionTitle } from '@/components/Card';
 import { RunSummary } from '@/components/RunSummary';
 import { colors, spacing, type } from '@/theme';
 
-// S5 결과 입력 (S3 종료 후 자동 진입) → 저장하면 서버가 계획을 재조정
+// S5 결과 입력 (S3 종료 후 자동 진입) → 저장하면 앱 안에서 계획을 재조정 (planner 구현 후)
 export default function RunResultScreen() {
   const { runId } = useLocalSearchParams<{ runId: string }>();
   const insets = useSafeAreaInsets();
@@ -19,7 +19,7 @@ export default function RunResultScreen() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    runsApi
+    runsDb
       .get(Number(runId))
       .then(setRun)
       .catch(() => setError('러닝 기록을 불러오지 못했습니다.'));

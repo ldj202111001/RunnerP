@@ -3,8 +3,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { runsApi } from '@/api/endpoints';
-import type { Run } from '@/api/types';
+import { runsDb } from '@/db';
+import type { Run } from '@/db/types';
 import { Button } from '@/components/Button';
 import { Card, SectionTitle } from '@/components/Card';
 import { RunSummary } from '@/components/RunSummary';
@@ -19,7 +19,7 @@ export default function RunDetailScreen() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    runsApi
+    runsDb
       .get(Number(id))
       .then(setRun)
       .catch(() => setError('러닝 기록을 불러오지 못했습니다.'));
@@ -28,7 +28,7 @@ export default function RunDetailScreen() {
   const remove = async () => {
     setDeleting(true);
     try {
-      await runsApi.remove(Number(id));
+      await runsDb.remove(Number(id));
       router.back();
     } catch {
       setDeleting(false);

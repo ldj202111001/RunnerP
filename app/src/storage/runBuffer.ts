@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import type { RunCreateRequest } from '@/api/types';
+import type { RunCreateRequest } from '@/db/types';
 import type { TrackPoint } from '@/sensors/summary';
 
 const ACTIVE_KEY = 'run_buffer/active';
@@ -30,7 +30,7 @@ export const runBuffer = {
   loadActive: () => read<ActiveRun>(ACTIVE_KEY),
   clearActive: () => AsyncStorage.removeItem(ACTIVE_KEY),
 
-  // 서버 전송에 실패한 러닝 요약. 다시 보내기 전까지 보관합니다.
+  // 폰 DB 저장에 실패한 러닝 요약. 다시 저장하기 전까지 보관합니다.
   savePending: (run: RunCreateRequest) => AsyncStorage.setItem(PENDING_KEY, JSON.stringify(run)),
   loadPending: () => read<RunCreateRequest>(PENDING_KEY),
   clearPending: () => AsyncStorage.removeItem(PENDING_KEY),

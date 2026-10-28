@@ -3,8 +3,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
-import { runsApi } from '@/api/endpoints';
-import type { Run, RunTotals } from '@/api/types';
+import { runsDb } from '@/db';
+import type { Run, RunTotals } from '@/db/types';
 import { Button } from '@/components/Button';
 import { Card, SectionTitle } from '@/components/Card';
 import { colors, radius, spacing, type } from '@/theme';
@@ -28,8 +28,8 @@ export default function HistoryScreen() {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     try {
       const [first, totals] = await Promise.all([
-        runsApi.list({ page: 1 }),
-        runsApi.summary({ from: monthStart.toISOString() }),
+        runsDb.list({ page: 1 }),
+        runsDb.summary({ from: monthStart.toISOString() }),
       ]);
       if (req !== requestId.current) return;
       setRuns(first.items);
@@ -60,7 +60,7 @@ export default function HistoryScreen() {
     const req = requestId.current;
     setLoadingMore(true);
     try {
-      const next = await runsApi.list({ page: page + 1 });
+      const next = await runsDb.list({ page: page + 1 });
       if (req !== requestId.current) return;
       // 그사이 새 기록이 생겨 한 칸씩 밀렸을 수 있으니 이미 있는 id는 뺍니다.
       setRuns((prev) => {

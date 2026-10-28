@@ -29,7 +29,7 @@ export function parseDuration(text: string): number | null {
   return h * 3600 + m * 60 + s;
 }
 
-// 로컬 날짜 → "2026-10-27" (서버 DATE 형식)
+// 로컬 날짜 → "2026-10-27" (DB DATE 형식)
 export function toISODate(d: Date): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }

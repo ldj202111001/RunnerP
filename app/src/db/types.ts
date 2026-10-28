@@ -1,4 +1,4 @@
-// 서버 API 요청·응답 타입 (전체구조설계서 3장 기준)
+// 앱 데이터 타입 (폰 DB src/db의 입력·출력). 이름과 모양은 서버 시절 API(전체구조설계서 3장)를 그대로 따릅니다.
 
 export type Gender = 'M' | 'F' | 'OTHER';
 export type SessionType = 'EASY' | 'LONG' | 'TEMPO' | 'INTERVAL' | 'REST';
@@ -7,28 +7,7 @@ export type GoalStatus = 'ACTIVE' | 'DONE' | 'DROPPED';
 export type GoalType = 'HEALTH' | 'IMPROVE' | 'RACE'; // 건강·습관 / 기록 향상 / 대회 준비
 export type Weekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
-// 인증·사용자
-export interface SignupRequest {
-  email: string;
-  password: string;
-  nickname: string;
-}
-
-export interface SignupResponse {
-  user_id: number;
-  access_token: string;
-}
-
-export interface LoginRequest {
-  email: string;
-  password: string;
-}
-
-export interface LoginResponse {
-  access_token: string;
-}
-
-// PUT은 보낸 필드만 바꿈. 신체 정보는 온보딩에서 묻지 않아 모두 선택
+// 프로필 (기기 1대 = 사용자 1명). 수정은 보낸 필드만 바꿈. 신체 정보는 온보딩에서 묻지 않아 모두 선택
 export interface Profile {
   weekly_days: number; // 2–6, 가능한 요일 수 이하
   availability?: Partial<Record<Weekday, number>> | null; // 요일별 가능 시간(분), 0 = 불가
@@ -38,15 +17,8 @@ export interface Profile {
   weight_kg?: number | null;
 }
 
-export interface Me {
-  id: number;
-  email: string;
-  nickname: string;
-  profile: Profile | null;
-}
-
 // 목표
-// type별 필드 (설계서 3.2). 비운 값은 서버 기본값: 주 150분, 목표 기록 = 현재 예상의 95%
+// type별 필드 (설계서 3.2). 비운 값은 기본값: 주 150분, 목표 기록 = 현재 예상의 95%
 export type GoalCreateRequest = { recent_5k_sec?: number } & ( // 콜드 스타트용 (Riegel), 없으면 35분
   | { type: 'HEALTH'; weekly_minutes_target?: number }
   | { type: 'IMPROVE'; distance_km: number; target_time_sec?: number }
@@ -103,7 +75,7 @@ export interface RunCreateRequest {
 export interface Run extends RunCreateRequest {
   id: number;
   cadence_spm: number | null;
-  // 서버가 elevation_profile로 계산한 코스 지형 (고도 데이터가 없으면 null)
+  // 저장할 때 elevation_profile로 계산한 코스 지형 (engine/terrain) (고도 데이터가 없으면 null)
   min_altitude_m: number | null;
   max_altitude_m: number | null;
   uphill_distance_m: number | null;

@@ -3,9 +3,9 @@ import { useState, type ComponentProps } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { goalsApi, usersApi } from '@/api/endpoints';
-import type { Goal, GoalCreateRequest, GoalType } from '@/api/types';
-import { useSession } from '@/auth/session';
+import { goalsDb, profileDb, ValidationError } from '@/db';
+import type { Goal, GoalCreateRequest, GoalType } from '@/db/types';
+import { useSession } from '@/session';
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
 import { TextField } from '@/components/TextField';
@@ -43,7 +43,7 @@ const DISTANCES = [
 ];
 
 const WEEKLY_DAYS = [2, 3, 4, 5, 6];
-const MIN_RACE_DAYS = 14; // 서버 규칙: 대회는 오늘부터 2주 이후
+const MIN_RACE_DAYS = 14; // 목표 저장 규칙(db/goals.ts): 대회는 오늘부터 2주 이후
 
 // 시각을 버리고 날짜만 더함 (자정 기준)
 const addDays = (d: Date, days: number) => new Date(d.getFullYear(), d.getMonth(), d.getDate() + days);
@@ -94,11 +94,11 @@ export default function GoalSetupScreen() {
           ? { type: 'IMPROVE', distance_km: distanceKm, ...extra }
           : { type: 'RACE', distance_km: distanceKm, target_date: toISODate(raceDate), ...extra };
     try {
-      await usersApi.updateProfile({ weekly_days: weeklyDays });
-      setCreated(await goalsApi.create(body));
+      await profileDb.update({ weekly_days: weeklyDays });
+      setCreated(await goalsDb.create(body));
       setStep('done');
-    } catch {
-      setError('저장하지 못했습니다. 서버 연결을 확인하고 다시 시도해 주세요.');
+    } catch (e) {
+      setError(e instanceof ValidationError ? e.message : '저장하지 못했습니다. 다시 시도해 주세요.');
     } finally {
       setSubmitting(false);
     }

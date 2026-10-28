@@ -3,7 +3,7 @@
 
 import { openDatabaseAsync } from 'expo-sqlite';
 
-import type { GoalCreateRequest, Profile, RunCreateRequest } from '@/api/types';
+import type { GoalCreateRequest, Profile, RunCreateRequest } from './types';
 
 import { createGoal, currentGoal, updateGoal } from './goals';
 import { getProfile, updateProfile } from './profile';

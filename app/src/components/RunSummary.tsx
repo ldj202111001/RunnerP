@@ -2,7 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import type { Run, Split } from '@/api/types';
+import type { Run, Split } from '@/db/types';
 import { Card, SectionTitle } from '@/components/Card';
 import { RouteMap } from '@/components/RouteMap';
 import { StatTile } from '@/components/StatTile';
