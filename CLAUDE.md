@@ -7,10 +7,12 @@
 
 ## 구조
 
+**폰 단독 구조로 전환 중 (2026-10-29 결정)**: 서버 없이 폰 하나로 기록 저장·예측·계획을 한다. 학습만 PC에서 하고 모델 파일을 앱에 포함한다. `server/`의 기능은 앱(`src/db/`, `src/engine/`)으로 옮기는 중이며, 다 옮길 때까지 참고용으로 남긴다. 순서는 설계서 8절 5단계.
+
 ```
 app/      Expo(SDK 58) + Expo Router 앱. 지침은 app/AGENTS.md (Expo API는 기억 말고 버전 문서 확인)
-server/   FastAPI + SQLAlchemy + Alembic. 개발 DB는 SQLite(server/dev.db), 운영은 MySQL 예정
-ml/       오프라인 학습 (FitRec → preprocess.py → train.py → server/ml_models/model_v1.json). 지침은 ml/README.md, 데이터 받기는 ml/DATA.md
+server/   (전환 전 구현) FastAPI + SQLAlchemy + Alembic. 개발 DB는 SQLite(server/dev.db)
+ml/       오프라인 학습 (FitRec → preprocess.py → train.py → model_v1.json, 지금은 server/ml_models/에 저장). 지침은 ml/README.md, 데이터 받기는 ml/DATA.md
 app/eas.json     EAS 빌드 프로필 (development = 개발 빌드 APK)
 start_phone.bat  PC LAN IP 감지 → app/.env.local 갱신 → 서버·Expo를 각각 새 창으로 실행
 ```
@@ -18,9 +20,9 @@ start_phone.bat  PC LAN IP 감지 → app/.env.local 갱신 → 서버·Expo를 
 ## 설계 원칙 (어기지 말 것)
 
 1. 심박수는 쓰지 않는다. 훈련 부하는 sRPE = 운동 시간(분) × RPE(1–10).
-2. ML은 성과 예측(`services/predictor.py`)에만, 계획 배분은 규칙(`services/planner.py`: ACWR·80/20)으로. 두 모듈을 섞지 않는다.
-3. 앱은 수집·표시만, 계산은 서버에서.
-4. 원본 GPS 시계열은 저장하지 않는다. 러닝 1건당 요약값 + 폴리라인 + 1km 구간 + 100m 간격 고도 프로필만. 경사 등 지형 값은 서버가 프로필로 계산(`services/terrain.py`).
+2. ML은 성과 예측(`predictor`)에만, 계획 배분은 규칙(`planner`: ACWR·80/20)으로. 두 모듈을 섞지 않는다.
+3. 폰 하나로 동작한다. 서버·로그인·인터넷 없이 앱 안에서 저장·예측·계획까지 한다. 모델은 정적 파일로 앱에 포함하고 폰에서 재학습하지 않는다.
+4. 원본 GPS 시계열은 저장하지 않는다. 러닝 1건당 요약값 + 폴리라인 + 1km 구간 + 100m 간격 고도 프로필만. 경사 등 지형 값은 프로필로 계산(`terrain`).
 5. ML 피처는 앱 DB의 `runs` 테이블만으로 계산 가능해야 한다.
 
 ## 실행
@@ -61,7 +63,7 @@ ML (`ml/`):
 - 측정 화면 지표는 옆으로 넘기는 2페이지: 1) 거리·시간·평균/현재 페이스 2) 케이던스(최근 30초)·걸음수·현재 경사(최근 약 100m)·현재 고도·누적 상승. 측정 중에는 옆 메뉴 스와이프를 끈다
 - 플레이스홀더: 오늘(`today.tsx`), 계획(`plan.tsx`), 기록 탭의 주간 그래프·예상 기록 추이, 결과 화면의 RPE·완주·메모 입력
 
-다음 순서(설계서 8절): planner → 추천 API → 남은 화면.
+다음 순서(설계서 8절): 폰 단독 전환(모델을 앱에서 예측 → 폰 SQLite → 계산 코드 이전 → 로그인 제거) → 앱 안에 planner → 남은 화면.
 
 ## 작업 규칙
 
